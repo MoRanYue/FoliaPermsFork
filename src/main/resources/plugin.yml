@@ -1,0 +1,21 @@
+name: FoliaPerms
+version: '1.0.2'
+main: kaiakk.foliaPerms.FoliaPerms
+api-version: '1.20.5'
+authors: [KaiakK]
+description: A simple Folia-only permission manager with YAML storage and Adventure messages.
+website: https://modrinth.com/plugin/axior
+folia-supported: true
+load: STARTUP
+
+commands:
+  fperm:
+    description: "Manage FoliaPerms (groups/users/permissions)"
+    usage: "/fperm <help|reload|gather|refresh|user|group|check|listperms>"
+    permission: folia.perms
+    permission-message: "You don't have permission to use this command."
+
+permissions:
+  folia.perms:
+    description: "Allow use of FoliaPerms admin commands"
+    default: op

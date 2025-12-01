@@ -1,0 +1,84 @@
+package kaiakk.foliaPerms.commands;
+
+import kaiakk.foliaPerms.FoliaPerms;
+import kaiakk.foliaPerms.permissions.PermissionService;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class FpermTabCompleter implements TabCompleter {
+    private final FoliaPerms plugin;
+    private final PermissionService service;
+
+    public FpermTabCompleter(FoliaPerms plugin) {
+        this.plugin = plugin;
+        this.service = plugin.getPermissionService();
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> res = new ArrayList<>();
+        if (args.length == 1) {
+            String partial = args[0].toLowerCase();
+            String[] opts = new String[]{"help","reload","gather","refresh","user","group","check","listperms"};
+            for (String s : opts) if (s.startsWith(partial)) res.add(s);
+            return res;
+        }
+
+        String sub = args[0].toLowerCase();
+        if (sub.equals("user")) {
+            if (args.length == 2) {
+                String[] opts = new String[]{"addperm","removeperm"};
+                for (String s : opts) if (s.startsWith(args[1].toLowerCase())) res.add(s);
+                return res;
+            }
+            if (args.length == 3) {
+                return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+            }
+            return res;
+        }
+
+        if (sub.equals("group")) {
+            if (args.length == 2) {
+                String[] opts = new String[]{"create","addperm","adduser"};
+                for (String s : opts) if (s.startsWith(args[1].toLowerCase())) res.add(s);
+                return res;
+            }
+            if (args.length >= 3) {
+                String action = args[1].toLowerCase();
+                if (action.equals("create")) {
+                    return res;
+                }
+                if (action.equals("addperm")) {
+                    return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+                }
+                if (action.equals("adduser")) {
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+                    }
+                    if (args.length == 4) {
+                        return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[3].toLowerCase())).collect(Collectors.toList());
+                    }
+                }
+            }
+        }
+
+        if (sub.equals("check")) {
+            if (args.length == 2) {
+                return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase())).collect(Collectors.toList());
+            }
+        }
+        if (sub.equals("listperms")) {
+            if (args.length == 2) {
+                return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase())).collect(Collectors.toList());
+            }
+        }
+
+        return res;
+    }
+}

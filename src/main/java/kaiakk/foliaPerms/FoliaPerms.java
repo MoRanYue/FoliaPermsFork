@@ -33,13 +33,16 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
     @Override
     public void onLoad() {
         if (!isFolia()) {
+            getLogger().severe("Error detected!");
             getLogger().severe("FoliaPerms is a Folia-only plugin!");
             getLogger().severe("It appears you are running a normal Bukkit/Paper/Spigot server.");
             getLogger().severe("This plugin will now disable itself, goodbye.");
+            getLogger().severe("Disabling FoliaPerms...");
             getServer().getPluginManager().disablePlugin(this);
         } else {
             getLogger().info("Folia environment detected. FoliaPerms is ready to enable.");
-            getLogger().info("Loading permissions data...");
+            getLogger().info("Enabling FoliaPerms...");
+            getLogger().info("Loading all permissions data...");
         }
     }
     @Override
@@ -51,7 +54,7 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             this.permissionService.load();
             getLogger().info("Loaded permissions data.");
         } catch (Exception e) {
-            getLogger().severe("Failed to load permissions data: " + e.getMessage());
+            kaiakk.foliaPerms.internal.ErrorHandler.handle(this, "Failed to load permissions data", e);
         }
 
         if (getCommand("fperm") != null) {
@@ -60,6 +63,8 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
         }
 
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        getServer().getPluginManager().registerEvents(new kaiakk.foliaPerms.events.PluginEnableListener(this), this);
+        getServer().getPluginManager().registerEvents(new kaiakk.foliaPerms.gui.GuiListener(), this);
 
         getServer().getServicesManager().register(FoliaPermsAPI.class, this, this, ServicePriority.Normal);
         getLogger().info("FoliaPerms API registered with ServicesManager.");
@@ -70,7 +75,7 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
                 permissionService.getRegisteredPermissions().forEach(p -> getLogger().info(" - " + p));
                 refreshAllAttachments();
             } catch (Exception e) {
-                getLogger().severe("Failed to gather registered permissions: " + e.getMessage());
+                kaiakk.foliaPerms.internal.ErrorHandler.handle(this, "Failed to gather registered permissions", e);
             }
     }
 
@@ -103,7 +108,7 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             PermissionAttachment attach = player.addAttachment(this);
             attachments.put(id, attach);
 
-            getLogger().info("Created/updated PermissionAttachment for " + player.getName());
+            getLogger().info("Created/updated the permissions attachment for " + player.getName());
 
             var registered = permissionService.getRegisteredPermissions();
             for (String node : registered) {

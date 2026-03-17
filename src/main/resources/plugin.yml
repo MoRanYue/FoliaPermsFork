@@ -1,10 +1,10 @@
 name: FoliaPerms
-version: '1.0.2'
+version: '${version}'
 main: kaiakk.foliaPerms.FoliaPerms
-api-version: '1.20.5'
+api-version: '1.19'
 authors: [KaiakK]
-description: A simple Folia-only permission manager with YAML storage and Adventure messages.
-website: https://modrinth.com/plugin/axior
+description: A simple Folia-only permission manager with YAML storage.
+website: https://modrinth.com/plugin/foliaperms
 folia-supported: true
 load: STARTUP
 
@@ -18,4 +18,4 @@ commands:
 permissions:
   folia.perms:
     description: "Allow use of FoliaPerms admin commands"
-    default: op
+    default: op # given by default to server operators, so that there wouldn't be a lockout situation

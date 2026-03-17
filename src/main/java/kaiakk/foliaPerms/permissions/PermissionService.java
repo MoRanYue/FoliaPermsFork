@@ -55,7 +55,7 @@ public class PermissionService {
                 groups.putAll(loadedGroups);
                 plugin.getLogger().info("Loaded " + users.size() + " users and " + groups.size() + " groups from permissions.yml");
                 if (callback != null) {
-                    try { callback.run(); } catch (Throwable t) { plugin.getLogger().severe("Exception in load callback: " + t.getMessage()); }
+                    try { callback.run(); } catch (Throwable t) { kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Exception in load callback", t); }
                 }
             });
         });
@@ -102,7 +102,7 @@ public class PermissionService {
                 }
             }
         } catch (Throwable t) {
-            plugin.getLogger().fine("Could not gather command-map permissions: " + t.getMessage());
+            kaiakk.foliaPerms.internal.ErrorHandler.warn(plugin, "Could not gather command-map permissions!", t);
         }
     }
 
@@ -143,7 +143,7 @@ public class PermissionService {
             groupsSnapshot.put(key, copy);
         }
 
-        plugin.getLogger().info("Scheduling async permissions save (background task)");
+        plugin.getLogger().info("Scheduling async permissions save.");
         try {
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
@@ -264,6 +264,26 @@ public class PermissionService {
         } catch (Throwable ignored) {}
     }
 
+    public void removeUserFromGroup(UUID id, String group) {
+        if (group == null) return;
+        String key = group.toLowerCase();
+        UserData ud = getUser(id);
+        if (ud != null) ud.removeGroup(group);
+        GroupData gd = groups.get(key);
+        if (gd != null) gd.removeMember(id.toString());
+        plugin.getLogger().info("Removed user " + id + " from group " + group);
+        try {
+            if (plugin instanceof FoliaPerms) {
+                JavaPlugin p = plugin;
+                plugin.getServer().getScheduler().runTask(p, () -> {
+                    var fp = (FoliaPerms) plugin;
+                    var player = fp.getServer().getPlayer(id);
+                    if (player != null) fp.refreshPlayerAttachment(player);
+                });
+            }
+        } catch (Throwable ignored) {}
+    }
+
     public boolean hasPermission(UUID id, String node) {
         if (node == null) return false;
         String normalized = node.toLowerCase();
@@ -280,6 +300,33 @@ public class PermissionService {
             }
         }
         return false;
+    }
+
+    public boolean groupHasDirectPermission(String name, String node) {
+        if (name == null || node == null) return false;
+        GroupData gd = groups.get(name.toLowerCase());
+        return gd != null && gd.getPermissions().contains(node.toLowerCase());
+    }
+
+    public boolean userHasDirectPermission(UUID id, String node) {
+        if (id == null || node == null) return false;
+        UserData ud = users.get(id);
+        return ud != null && ud.getPermissions().contains(node.toLowerCase());
+    }
+
+    public void removeGroupPermission(String name, String node) {
+        if (name == null || node == null) return;
+        GroupData gd = groups.get(name.toLowerCase());
+        if (gd != null) gd.removePermission(node.toLowerCase());
+        plugin.getLogger().info("Removed permission '" + node + "' from group " + name);
+        try {
+            if (plugin instanceof FoliaPerms) {
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    var fp = (FoliaPerms) plugin;
+                    fp.refreshAllAttachments();
+                });
+            }
+        } catch (Throwable ignored) {}
     }
 
     public Map<UUID, UserData> getUsers() {

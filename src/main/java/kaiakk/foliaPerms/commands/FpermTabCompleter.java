@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class FpermTabCompleter implements TabCompleter {
         List<String> res = new ArrayList<>();
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
-            String[] opts = new String[]{"help","reload","gather","refresh","user","group","check","listperms"};
+            String[] opts = new String[]{"help","reload","gather","refresh","user","group","check","listperms","editor"};
             for (String s : opts) if (s.startsWith(partial)) res.add(s);
             return res;
         }
@@ -33,19 +34,36 @@ public class FpermTabCompleter implements TabCompleter {
         String sub = args[0].toLowerCase();
         if (sub.equals("user")) {
             if (args.length == 2) {
-                String[] opts = new String[]{"addperm","removeperm"};
+                String[] opts = new String[]{"addperm","removeperm","addgroup","removegroup"};
                 for (String s : opts) if (s.startsWith(args[1].toLowerCase())) res.add(s);
                 return res;
             }
             if (args.length == 3) {
                 return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[2].toLowerCase())).collect(Collectors.toList());
             }
+            if (args.length == 4) {
+                String action = args[1].toLowerCase();
+                if (action.equals("addperm") || action.equals("removeperm")) {
+                    String partial = args[3] == null ? "" : args[3].toLowerCase();
+                    if (service == null) return Collections.emptyList();
+                    return service.getRegisteredPermissions().stream()
+                            .filter(p -> p != null && p.toLowerCase().startsWith(partial))
+                            .sorted()
+                            .limit(25)
+                            .collect(Collectors.toList());
+                }
+                if (action.equals("addgroup") || action.equals("removegroup")) {
+                    String partial = args[3] == null ? "" : args[3].toLowerCase();
+                    if (service == null) return Collections.emptyList();
+                    return service.getGroups().keySet().stream().filter(g -> g.startsWith(partial)).sorted().collect(Collectors.toList());
+                }
+            }
             return res;
         }
 
         if (sub.equals("group")) {
             if (args.length == 2) {
-                String[] opts = new String[]{"create","addperm","adduser"};
+                String[] opts = new String[]{"create","addperm","adduser","removeuser"};
                 for (String s : opts) if (s.startsWith(args[1].toLowerCase())) res.add(s);
                 return res;
             }
@@ -55,9 +73,28 @@ public class FpermTabCompleter implements TabCompleter {
                     return res;
                 }
                 if (action.equals("addperm")) {
-                    return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+                    }
+                    if (args.length == 4) {
+                        String partial = args[3] == null ? "" : args[3].toLowerCase();
+                        if (service == null) return Collections.emptyList();
+                        return service.getRegisteredPermissions().stream()
+                                .filter(p -> p != null && p.toLowerCase().startsWith(partial))
+                                .sorted()
+                                .limit(25)
+                                .collect(Collectors.toList());
+                    }
                 }
                 if (action.equals("adduser")) {
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
+                    }
+                    if (args.length == 4) {
+                        return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[3].toLowerCase())).collect(Collectors.toList());
+                    }
+                }
+                if (action.equals("removeuser")) {
                     if (args.length == 3) {
                         return service.getGroups().keySet().stream().filter(g -> g.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
                     }
@@ -71,6 +108,15 @@ public class FpermTabCompleter implements TabCompleter {
         if (sub.equals("check")) {
             if (args.length == 2) {
                 return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase())).collect(Collectors.toList());
+            }
+            if (args.length == 3) {
+                String partial = args[2] == null ? "" : args[2].toLowerCase();
+                if (service == null) return Collections.emptyList();
+                return service.getRegisteredPermissions().stream()
+                        .filter(p -> p != null && p.toLowerCase().startsWith(partial))
+                        .sorted()
+                        .limit(50)
+                        .collect(Collectors.toList());
             }
         }
         if (sub.equals("listperms")) {

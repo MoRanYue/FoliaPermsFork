@@ -10,6 +10,7 @@ import java.util.UUID;
  * Bukkit's ServicesManager and call these methods to check or inspect permissions.
  *
  * Implementations MUST be thread-safe for Folia (concurrent reads/writes).
+ * Version: 1.13.0
  */
 public interface FoliaPermsAPI {
 

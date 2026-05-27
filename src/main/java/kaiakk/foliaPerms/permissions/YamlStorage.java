@@ -10,6 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * YAML-based storage for user and group permission data.
+ * Version: 1.13.0
+ */
 public class YamlStorage {
     private final JavaPlugin plugin;
     private final File file;
@@ -17,82 +21,135 @@ public class YamlStorage {
     public YamlStorage(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "permissions.yml");
-        if (!file.getParentFile().exists()) file.getParentFile().mkdirs();
+        if (!file.getParentFile().exists()) {
+            boolean created = file.getParentFile().mkdirs();
+            if (created) {
+                plugin.getLogger().fine("Created data folder: " + file.getParentFile());
+            }
+        }
     }
 
     public Map<UUID, UserData> loadUsers() {
         Map<UUID, UserData> users = new HashMap<>();
-        if (!file.exists()) return users;
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        if (!cfg.isConfigurationSection("users")) return users;
-        for (String key : cfg.getConfigurationSection("users").getKeys(false)) {
-            UUID id = null;
-            try {
-                id = UUID.fromString(key);
-            } catch (Exception ex) {
-                try {
-                    var off = plugin.getServer().getOfflinePlayer(key);
-                    if (off != null) id = off.getUniqueId();
-                } catch (Exception ignored) {
-                }
-            }
-            if (id == null) continue;
-            UserData ud = new UserData(id);
-            if (cfg.isList("users." + key + ".permissions")) {
-                for (Object o : cfg.getList("users." + key + ".permissions")) {
-                    ud.addPermission(String.valueOf(o));
-                }
-            }
-            if (cfg.isList("users." + key + ".groups")) {
-                for (Object o : cfg.getList("users." + key + ".groups")) {
-                    ud.addGroup(String.valueOf(o));
-                }
-            }
-            users.put(id, ud);
+        if (!file.exists()) {
+            plugin.getLogger().fine("Permissions file does not exist yet.");
+            return users;
         }
+        
+        try {
+            FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+            if (!cfg.isConfigurationSection("users")) {
+                plugin.getLogger().fine("No users section in permissions.yml");
+                return users;
+            }
+            
+            var usersSection = cfg.getConfigurationSection("users");
+            if (usersSection == null) return users;
+            
+            for (String key : usersSection.getKeys(false)) {
+                UUID id = null;
+                try {
+                    id = UUID.fromString(key);
+                } catch (IllegalArgumentException ex) {
+                    // Try legacy player name lookup
+                    try {
+                        var off = plugin.getServer().getOfflinePlayer(key);
+                        if (off != null) id = off.getUniqueId();
+                    } catch (Exception ignored) {}
+                }
+                
+                if (id == null) {
+                    plugin.getLogger().warning("Could not resolve user key: " + key);
+                    continue;
+                }
+                
+                UserData ud = new UserData(id);
+                if (cfg.isList("users." + key + ".permissions")) {
+                    for (Object o : cfg.getList("users." + key + ".permissions")) {
+                        ud.addPermission(String.valueOf(o));
+                    }
+                }
+                if (cfg.isList("users." + key + ".groups")) {
+                    for (Object o : cfg.getList("users." + key + ".groups")) {
+                        ud.addGroup(String.valueOf(o));
+                    }
+                }
+                users.put(id, ud);
+            }
+            
+            plugin.getLogger().fine("Loaded " + users.size() + " users from YAML.");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error loading users from YAML: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
         return users;
     }
 
     public Map<String, GroupData> loadGroups() {
         Map<String, GroupData> groups = new HashMap<>();
         if (!file.exists()) return groups;
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        if (!cfg.isConfigurationSection("groups")) return groups;
-        for (String key : cfg.getConfigurationSection("groups").getKeys(false)) {
-            GroupData gd = new GroupData(key);
-            if (cfg.isList("groups." + key + ".permissions")) {
-                for (Object o : cfg.getList("groups." + key + ".permissions")) {
-                    gd.addPermission(String.valueOf(o));
-                }
+        
+        try {
+            FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+            if (!cfg.isConfigurationSection("groups")) {
+                plugin.getLogger().fine("No groups section in permissions.yml");
+                return groups;
             }
-            if (cfg.isList("groups." + key + ".members")) {
-                for (Object o : cfg.getList("groups." + key + ".members")) {
-                    gd.addMember(String.valueOf(o));
+            
+            var groupsSection = cfg.getConfigurationSection("groups");
+            if (groupsSection == null) return groups;
+            
+            for (String key : groupsSection.getKeys(false)) {
+                GroupData gd = new GroupData(key);
+                if (cfg.isList("groups." + key + ".permissions")) {
+                    for (Object o : cfg.getList("groups." + key + ".permissions")) {
+                        gd.addPermission(String.valueOf(o));
+                    }
                 }
+                if (cfg.isList("groups." + key + ".members")) {
+                    for (Object o : cfg.getList("groups." + key + ".members")) {
+                        gd.addMember(String.valueOf(o));
+                    }
+                }
+                groups.put(key.toLowerCase(), gd);
             }
-            groups.put(key.toLowerCase(), gd);
+            
+            plugin.getLogger().fine("Loaded " + groups.size() + " groups from YAML.");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error loading groups from YAML: " + e.getMessage());
+            e.printStackTrace();
         }
+        
         return groups;
     }
 
     public void save(Map<UUID, UserData> users, Map<String, GroupData> groups) throws IOException {
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        cfg.set("users", null);
-        cfg.set("groups", null);
+        try {
+            FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+            cfg.set("users", null);
+            cfg.set("groups", null);
 
-        for (Map.Entry<UUID, UserData> e : users.entrySet()) {
-            String path = "users." + e.getKey().toString();
-            cfg.set(path + ".permissions", e.getValue().getPermissions().stream().toList());
-            cfg.set(path + ".groups", e.getValue().getGroups().stream().toList());
+            // Save users
+            for (Map.Entry<UUID, UserData> e : users.entrySet()) {
+                String path = "users." + e.getKey().toString();
+                cfg.set(path + ".permissions", e.getValue().getPermissions().stream().toList());
+                cfg.set(path + ".groups", e.getValue().getGroups().stream().toList());
+            }
+
+            // Save groups
+            for (Map.Entry<String, GroupData> e : groups.entrySet()) {
+                String key = e.getKey().toLowerCase();
+                String path = "groups." + key;
+                cfg.set(path + ".permissions", e.getValue().getPermissions().stream().toList());
+                cfg.set(path + ".members", e.getValue().getMembers().stream().toList());
+            }
+
+            cfg.save(file);
+            plugin.getLogger().fine("Saved " + users.size() + " users and " + groups.size() + " groups to YAML.");
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to save permissions YAML: " + e.getMessage());
+            throw e;
         }
-
-        for (Map.Entry<String, GroupData> e : groups.entrySet()) {
-            String key = e.getKey().toLowerCase();
-            String path = "groups." + key;
-            cfg.set(path + ".permissions", e.getValue().getPermissions().stream().toList());
-            cfg.set(path + ".members", e.getValue().getMembers().stream().toList());
-        }
-
-        cfg.save(file);
     }
 }

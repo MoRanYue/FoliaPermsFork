@@ -5,11 +5,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+/**
+ * Core permission system logic and data management.
+ * Handles user/group permissions with caching and async operations.
+ * Version: 1.13.0
+ */
 public class PermissionService {
     private final JavaPlugin plugin;
     private final YamlStorage storage;
@@ -17,6 +25,9 @@ public class PermissionService {
     private final Map<UUID, UserData> users = new ConcurrentHashMap<>();
     private final Map<String, GroupData> groups = new ConcurrentHashMap<>();
     private final java.util.Set<String> registeredPermissions = ConcurrentHashMap.newKeySet();
+    
+    // Cache for sorted permissions (for UI efficiency)
+    private List<String> cachedSortedPermissions = null;
 
     public PermissionService(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -33,12 +44,20 @@ public class PermissionService {
         plugin.getLogger().info("Loaded " + users.size() + " users and " + groups.size() + " groups from permissions.yml");
         if (!users.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            for (UUID id : users.keySet()) sb.append(id.toString()).append(',');
+            int count = 0;
+            for (UUID id : users.keySet()) {
+                if (count++ < 5) sb.append(id.toString()).append(", ");
+            }
+            if (users.size() > 5) sb.append("... and ").append(users.size() - 5).append(" more");
             plugin.getLogger().fine("Loaded user UUIDs: " + sb.toString());
         }
         if (!groups.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            for (String g : groups.keySet()) sb.append(g).append(',');
+            int count = 0;
+            for (String g : groups.keySet()) {
+                if (count++ < 5) sb.append(g).append(", ");
+            }
+            if (groups.size() > 5) sb.append("... and ").append(groups.size() - 5).append(" more");
             plugin.getLogger().fine("Loaded groups: " + sb.toString());
         }
     }
@@ -63,6 +82,8 @@ public class PermissionService {
 
     public void gatherRegisteredPermissions(org.bukkit.plugin.Plugin plugin) {
         registeredPermissions.clear();
+        cachedSortedPermissions = null; // Invalidate cache
+        
         var pm = plugin.getServer().getPluginManager();
         for (org.bukkit.permissions.Permission p : pm.getPermissions()) {
             if (p == null) continue;
@@ -106,6 +127,18 @@ public class PermissionService {
         }
     }
 
+    /**
+     * Gets registered permissions, sorted and cached for UI efficiency.
+     */
+    public List<String> getRegisteredPermissionsSorted() {
+        if (cachedSortedPermissions == null) {
+            cachedSortedPermissions = registeredPermissions.stream()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
+        }
+        return cachedSortedPermissions;
+    }
+
     public java.util.Set<String> getRegisteredPermissions() {
         return java.util.Collections.unmodifiableSet(registeredPermissions);
     }
@@ -143,11 +176,12 @@ public class PermissionService {
             groupsSnapshot.put(key, copy);
         }
 
-        plugin.getLogger().info("Scheduling async permissions save.");
+        plugin.getLogger().fine("Scheduling async permissions save.");
         try {
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     storage.save(usersSnapshot, groupsSnapshot);
+                    plugin.getLogger().fine("Async save completed successfully.");
                 } catch (IOException ex) {
                     plugin.getLogger().severe("Async save failed: " + ex.getMessage());
                 }
@@ -157,6 +191,7 @@ public class PermissionService {
             Thread thr = new Thread(() -> {
                 try {
                     storage.save(usersSnapshot, groupsSnapshot);
+                    plugin.getLogger().fine("Background thread save completed.");
                 } catch (IOException ex) {
                     plugin.getLogger().severe("Async save failed: " + ex.getMessage());
                 }
@@ -179,6 +214,7 @@ public class PermissionService {
         if (normalized == null) return;
         getOrCreateUser(id).addPermission(normalized);
         registeredPermissions.add(normalized);
+        cachedSortedPermissions = null; // Invalidate cache
         plugin.getLogger().info("Added permission '" + normalized + "' to user " + id.toString());
         try {
             if (plugin instanceof FoliaPerms) {
@@ -234,6 +270,7 @@ public class PermissionService {
         GroupData gd = createGroup(name);
         gd.addPermission(normalized);
         registeredPermissions.add(normalized);
+        cachedSortedPermissions = null; // Invalidate cache
         plugin.getLogger().info("Added group permission '" + normalized + "' to group " + name);
         try {
             if (plugin instanceof FoliaPerms) {
@@ -284,20 +321,37 @@ public class PermissionService {
         } catch (Throwable ignored) {}
     }
 
+    /**
+     * Checks if a player has a permission.
+     * Supports wildcard permissions (e.g., "plugin.*")
+     */
     public boolean hasPermission(UUID id, String node) {
         if (node == null) return false;
         String normalized = node.toLowerCase();
         UserData ud = users.get(id);
         if (ud != null) {
+            // Direct permission check
             if (ud.getPermissions().contains(normalized)) return true;
+            
+            // Wildcard check
             if (ud.getPermissions().contains(normalized + ".*")) return true;
+            
+            // Check groups
             for (String g : ud.getGroups()) {
-                GroupData gd = groups.get(g.toLowerCase());
-                if (gd != null) {
-                    if (gd.getPermissions().contains(normalized)) return true;
-                    if (gd.getPermissions().contains(normalized + ".*")) return true;
-                }
+                if (checkGroupPermission(g, normalized)) return true;
             }
+        }
+        return false;
+    }
+
+    /**
+     * Helper method to check group permissions recursively.
+     */
+    private boolean checkGroupPermission(String groupName, String node) {
+        GroupData gd = groups.get(groupName.toLowerCase());
+        if (gd != null) {
+            if (gd.getPermissions().contains(node)) return true;
+            if (gd.getPermissions().contains(node + ".*")) return true;
         }
         return false;
     }

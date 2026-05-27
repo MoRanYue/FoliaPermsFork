@@ -7,7 +7,6 @@ import org.bukkit.inventory.InventoryHolder;
 public class PermEditorHolder implements InventoryHolder {
     private final FoliaPerms plugin;
     private final boolean isGroup;
-    /** Group name (lowercase) or UUID string for a player. */
     private final String targetId;
     private final int page;
 

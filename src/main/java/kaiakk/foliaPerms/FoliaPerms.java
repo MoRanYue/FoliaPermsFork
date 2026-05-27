@@ -17,6 +17,16 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * FoliaPerms - A simple permission manager for Folia servers.
+ * Version: 1.13.0
+ * 
+ * This plugin provides:
+ * - User and group-based permission management
+ * - YAML-based persistence
+ * - GUI editor for permissions
+ * - Folia-compatible thread-safe operations
+ */
 public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
     private static boolean isFolia() {
         try {
@@ -41,13 +51,14 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             getServer().getPluginManager().disablePlugin(this);
         } else {
             getLogger().info("Folia environment detected. FoliaPerms is ready to enable.");
-            getLogger().info("Enabling FoliaPerms...");
+            getLogger().info("Enabling FoliaPerms v1.13.0...");
             getLogger().info("Loading all permissions data...");
         }
     }
+    
     @Override
     public void onEnable() {
-        getLogger().info("FoliaPerms enabled successfully. Welcome to the Folia environment!");
+        getLogger().info("FoliaPerms v1.13.0 enabled successfully. Welcome to the Folia environment!");
 
         this.permissionService = new PermissionService(this);
         try {
@@ -69,18 +80,29 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
         getServer().getServicesManager().register(FoliaPermsAPI.class, this, this, ServicePriority.Normal);
         getLogger().info("FoliaPerms API registered with ServicesManager.");
 
-            try {
-                permissionService.gatherRegisteredPermissions(this);
-                getLogger().info("Gathered " + permissionService.getRegisteredPermissions().size() + " permissions from plugins.");
-                permissionService.getRegisteredPermissions().forEach(p -> getLogger().info(" - " + p));
-                refreshAllAttachments();
-            } catch (Exception e) {
-                kaiakk.foliaPerms.internal.ErrorHandler.handle(this, "Failed to gather registered permissions", e);
+        try {
+            permissionService.gatherRegisteredPermissions(this);
+            getLogger().info("Gathered " + permissionService.getRegisteredPermissions().size() + " permissions from plugins.");
+            // Log first 10 permissions
+            int count = 0;
+            for (String p : permissionService.getRegisteredPermissions()) {
+                if (count++ < 10) {
+                    getLogger().info(" - " + p);
+                }
             }
+            if (permissionService.getRegisteredPermissions().size() > 10) {
+                getLogger().info(" ... and " + (permissionService.getRegisteredPermissions().size() - 10) + " more");
+            }
+            refreshAllAttachments();
+            getLogger().info("Permission attachments initialized for " + Bukkit.getOnlinePlayers().size() + " players.");
+        } catch (Exception e) {
+            kaiakk.foliaPerms.internal.ErrorHandler.handle(this, "Failed to gather registered permissions", e);
+        }
     }
 
     @Override
     public void onDisable() {
+        getLogger().info("FoliaPerms v1.13.0 disabling...");
         getLogger().info("Saving permissions...");
         if (this.permissionService != null) {
             try {
@@ -90,12 +112,19 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
                 getLogger().severe("Failed to save permissions: " + e.getMessage());
             }
         }
+        
+        // Clean up all attachments
+        cleanupAllAttachments();
+        getLogger().info("FoliaPerms disabled successfully.");
     }
 
     public PermissionService getPermissionService() {
         return this.permissionService;
     }
 
+    /**
+     * Refreshes permission attachment for a specific player.
+     */
     public void refreshPlayerAttachment(Player player) {
         if (player == null || permissionService == null) return;
         try {
@@ -108,7 +137,7 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             PermissionAttachment attach = player.addAttachment(this);
             attachments.put(id, attach);
 
-            getLogger().info("Created/updated the permissions attachment for " + player.getName());
+            getLogger().fine("Created/updated the permissions attachment for " + player.getName());
 
             var registered = permissionService.getRegisteredPermissions();
             for (String node : registered) {
@@ -121,10 +150,10 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             }
             try {
                 player.recalculatePermissions();
-                getLogger().info("Recalculated permissions for " + player.getName());
+                getLogger().fine("Recalculated permissions for " + player.getName());
                 try {
                     player.updateCommands();
-                    getLogger().info("Updated command tree for " + player.getName());
+                    getLogger().fine("Updated command tree for " + player.getName());
                 } catch (Throwable t) {
                     getLogger().warning("Failed to update command tree for " + player.getName() + ": " + t.getMessage());
                 }
@@ -136,8 +165,42 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
         }
     }
 
+    /**
+     * Refreshes permission attachments for all online players.
+     */
     public void refreshAllAttachments() {
-        for (Player p : Bukkit.getOnlinePlayers()) refreshPlayerAttachment(p);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            refreshPlayerAttachment(p);
+        }
+    }
+
+    /**
+     * Removes a player's permission attachment (called on quit).
+     */
+    public void removePlayerAttachment(UUID playerId) {
+        PermissionAttachment old = attachments.remove(playerId);
+        if (old != null) {
+            try {
+                Player p = Bukkit.getPlayer(playerId);
+                if (p != null) {
+                    p.removeAttachment(old);
+                    getLogger().fine("Removed attachment for player " + playerId);
+                }
+            } catch (Exception e) {
+                getLogger().warning("Error removing attachment for " + playerId + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Cleans up all player attachments (called on disable).
+     */
+    private void cleanupAllAttachments() {
+        for (UUID id : attachments.keySet()) {
+            removePlayerAttachment(id);
+        }
+        attachments.clear();
+        getLogger().info("All permission attachments cleaned up.");
     }
 
     @Override

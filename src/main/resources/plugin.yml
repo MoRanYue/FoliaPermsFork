@@ -3,7 +3,7 @@ version: '${version}'
 main: kaiakk.foliaPerms.FoliaPerms
 api-version: '1.19'
 authors: [KaiakK]
-description: A simple Folia-only permission manager with YAML storage.
+description: A simple Folia-only permission manager with YAML storage, GUI editor, and advanced permission handling.
 website: https://modrinth.com/plugin/foliaperms
 folia-supported: true
 load: STARTUP

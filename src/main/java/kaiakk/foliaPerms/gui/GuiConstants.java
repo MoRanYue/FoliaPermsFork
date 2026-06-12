@@ -11,12 +11,15 @@ public final class GuiConstants {
     public static final int MAIN_MENU_SIZE = 27;
     public static final int PERMISSIONS_PAGE_SIZE = 54;
     public static final int PERMS_PER_PAGE = 45;
+    public static final int INHERITANCE_PAGE_SIZE = 54;
+    public static final int INHERITANCE_PER_PAGE = 45;
 
-    // Navigation buttons
+    // Navigation buttons (shared footer layout)
     public static final int BUTTON_BACK = 45;
     public static final int BUTTON_CENTER = 48;
     public static final int BUTTON_EXIT = 49;
     public static final int BUTTON_NEXT = 53;
+    public static final int BUTTON_INHERITANCE = 50; // Slot for inheritance management button
 
     // Inventory borders
     public static final int FOOTER_START = 45;

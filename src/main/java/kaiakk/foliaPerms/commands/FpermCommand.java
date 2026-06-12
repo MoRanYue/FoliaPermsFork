@@ -50,7 +50,29 @@ public class FpermCommand implements CommandExecutor {
         try {
             switch (sub) {
                 case "help":
-                    send(sender, ColorConverter.colorize("&eUsage: /fperm editor | reload | gather | user addperm <player> <perm> | user removeperm <player> <perm> | user addgroup <player> <group> | user removegroup <player> <group> | group create <name> | group addperm <name> <perm> | group adduser <name> <player> | group removeuser <name> <player> | check <player> <perm>"));
+                    send(sender, ColorConverter.colorize("&e===== FoliaPerms Commands ====="));
+                    send(sender, ColorConverter.colorize("&e/fperm editor &7- Open the permission editor GUI"));
+                    send(sender, ColorConverter.colorize("&e/fperm reload &7- Reload permissions from file"));
+                    send(sender, ColorConverter.colorize("&e/fperm gather &7- Gather permissions from all plugins"));
+                    send(sender, ColorConverter.colorize("&e/fperm refresh &7- Refresh all permission attachments"));
+                    send(sender, ColorConverter.colorize("&e--- User Commands ---"));
+                    send(sender, ColorConverter.colorize("&e/fperm user addperm <player> <perm>"));
+                    send(sender, ColorConverter.colorize("&e/fperm user removeperm <player> <perm>"));
+                    send(sender, ColorConverter.colorize("&e/fperm user addgroup <player> <group>"));
+                    send(sender, ColorConverter.colorize("&e/fperm user removegroup <player> <group>"));
+                    send(sender, ColorConverter.colorize("&e--- Group Commands ---"));
+                    send(sender, ColorConverter.colorize("&e/fperm group create <name>"));
+                    send(sender, ColorConverter.colorize("&e/fperm group addperm <name> <perm>"));
+                    send(sender, ColorConverter.colorize("&e/fperm group adduser <name> <player>"));
+                    send(sender, ColorConverter.colorize("&e/fperm group removeuser <name> <player>"));
+                    send(sender, ColorConverter.colorize("&e--- Inheritance Commands ---"));
+                    send(sender, ColorConverter.colorize("&e/fperm group setinherit <group> <parent> &7- Make group inherit from parent"));
+                    send(sender, ColorConverter.colorize("&e/fperm group removeinherit <group> <parent> &7- Remove inheritance"));
+                    send(sender, ColorConverter.colorize("&e/fperm group inheritance <group> &7- Show inheritance chain"));
+                    send(sender, ColorConverter.colorize("&e/fperm group perms <group> &7- Show all effective permissions (incl. inherited)"));
+                    send(sender, ColorConverter.colorize("&e--- Other Commands ---"));
+                    send(sender, ColorConverter.colorize("&e/fperm check <player> <perm>"));
+                    send(sender, ColorConverter.colorize("&e/fperm listperms <player>"));
                     break;
                 case "editor":
                     if (!(sender instanceof org.bukkit.entity.Player)) {
@@ -149,7 +171,7 @@ public class FpermCommand implements CommandExecutor {
                     break;
                 case "group":
                     if (args.length < 2) {
-                        send(sender, ColorConverter.colorize("&eUsage: /fperm group create|addperm|adduser|removeuser <args>"));
+                        send(sender, ColorConverter.colorize("&eUsage: /fperm group create|delete|addperm|adduser|removeuser|setinherit|removeinherit|inheritance|perms <args>"));
                         break;
                     }
                     try {
@@ -179,6 +201,21 @@ public class FpermCommand implements CommandExecutor {
                             var ot = Bukkit.getPlayerExact(args[3]);
                             if (ot != null) plugin.refreshPlayerAttachment(ot);
                             send(sender, ColorConverter.colorize("&aAdded " + args[3] + " to group " + gname));
+                        } else if (gaction.equals("delete")) {
+                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group delete <name>")); break; }
+                            String gdel = args[2];
+                            if (gdel.equalsIgnoreCase("default")) {
+                                send(sender, ColorConverter.colorize("&cThe default group cannot be deleted."));
+                                break;
+                            }
+                            boolean deleted = service.deleteGroup(gdel);
+                            if (deleted) {
+                                plugin.getPermissionService().saveAsync();
+                                plugin.refreshAllAttachments();
+                                send(sender, ColorConverter.colorize("&aGroup '" + gdel + "' deleted. Members re-assigned to default group."));
+                            } else {
+                                send(sender, ColorConverter.colorize("&cCould not delete group '" + gdel + "'. It may not exist or is protected."));
+                            }
                         } else if (gaction.equals("removeuser")) {
                             if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group removeuser <name> <player>")); break; }
                             String gname2 = args[2];
@@ -192,6 +229,64 @@ public class FpermCommand implements CommandExecutor {
                             var ot2 = Bukkit.getPlayerExact(args[3]);
                             if (ot2 != null) plugin.refreshPlayerAttachment(ot2);
                             send(sender, ColorConverter.colorize("&aRemoved " + args[3] + " from group " + gname2));
+                        } else if (gaction.equals("setinherit")) {
+                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group setinherit <group> <parent>")); break; }
+                            boolean success = service.addGroupInheritance(args[2], args[3]);
+                            if (success) {
+                                plugin.getPermissionService().saveAsync();
+                                plugin.refreshAllAttachments();
+                                send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' now inherits from '" + args[3] + "'."));
+                            } else {
+                                send(sender, ColorConverter.colorize("&cFailed to set inheritance. Check for circular dependencies."));
+                            }
+                        } else if (gaction.equals("removeinherit")) {
+                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group removeinherit <group> <parent>")); break; }
+                            service.removeGroupInheritance(args[2], args[3]);
+                            plugin.getPermissionService().saveAsync();
+                            plugin.refreshAllAttachments();
+                            send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' no longer inherits from '" + args[3] + "'."));
+                        } else if (gaction.equals("inheritance")) {
+                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group inheritance <group>")); break; }
+                            var chain = service.getGroupInheritanceChain(args[2]);
+                            send(sender, ColorConverter.colorize("&eInheritance chain for '" + args[2] + "':"));
+                            if (chain.isEmpty()) {
+                                send(sender, ColorConverter.colorize(" &7- (no inheritance)"));
+                            } else {
+                                for (String g : chain) {
+                                    send(sender, ColorConverter.colorize(" &7- " + g));
+                                }
+                            }
+                            // Also show parents directly
+                            var gd = service.getGroup(args[2]);
+                            if (gd != null && !gd.getParents().isEmpty()) {
+                                send(sender, ColorConverter.colorize("&eDirect parents: " + String.join(", ", gd.getParents())));
+                            }
+                        } else if (gaction.equals("perms")) {
+                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group perms <group>")); break; }
+                            var gd = service.getGroup(args[2]);
+                            if (gd == null) {
+                                send(sender, ColorConverter.colorize("&cGroup not found: " + args[2]));
+                                break;
+                            }
+                            send(sender, ColorConverter.colorize("&ePermissions for group '" + args[2] + "':"));
+                            // Direct permissions
+                            if (gd.getPermissions().isEmpty()) {
+                                send(sender, ColorConverter.colorize(" &7- (no direct permissions)"));
+                            } else {
+                                send(sender, ColorConverter.colorize(" &bDirect permissions:"));
+                                for (String p : gd.getPermissions()) {
+                                    send(sender, ColorConverter.colorize(" &7- " + p));
+                                }
+                            }
+                            // Inherited permissions
+                            var inherited = gd.getAllInheritedPermissions(service.getGroups());
+                            inherited.removeAll(gd.getPermissions()); // Only show inherited ones
+                            if (!inherited.isEmpty()) {
+                                send(sender, ColorConverter.colorize(" &bInherited permissions (from parents):"));
+                                for (String p : inherited) {
+                                    send(sender, ColorConverter.colorize(" &7- " + p));
+                                }
+                            }
                         } else {
                             send(sender, ColorConverter.colorize("&cUnknown group action: " + gaction));
                         }

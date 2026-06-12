@@ -1,7 +1,7 @@
 name: FoliaPerms
 version: '${version}'
 main: kaiakk.foliaPerms.FoliaPerms
-api-version: '1.19'
+api-version: '1.21'
 authors: [KaiakK]
 description: A simple Folia-only permission manager with YAML storage, GUI editor, and advanced permission handling.
 website: https://modrinth.com/plugin/foliaperms

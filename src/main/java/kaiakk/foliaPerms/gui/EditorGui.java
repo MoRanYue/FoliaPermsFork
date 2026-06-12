@@ -2,6 +2,7 @@ package kaiakk.foliaPerms.gui;
 
 import kaiakk.foliaPerms.FoliaPerms;
 import kaiakk.foliaPerms.internal.ColorConverter;
+import kaiakk.foliaPerms.permissions.GroupData;
 import kaiakk.foliaPerms.permissions.PermissionService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -14,6 +15,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * GUI factory for the FoliaPerms permission editor.
@@ -54,8 +56,14 @@ public class EditorGui {
             int slot = 0;
             for (String name : service.getGroups().keySet()) {
                 if (slot >= size - 9) break;
+                // Show current parent count in lore for groups
+                GroupData gd = service.getGroup(name);
+                String parentInfo = (gd != null && !gd.getParents().isEmpty())
+                        ? "&7Inherits: " + String.join(", ", gd.getParents())
+                        : "&7No inheritance set";
                 inv.setItem(slot++, makeItem(Material.CHEST, "&e" + name,
-                        "&7Click to edit permissions for this group."));
+                        "&7Click to edit permissions & inheritance.",
+                        parentInfo));
             }
         } else {
             int slot = 0;
@@ -111,6 +119,81 @@ public class EditorGui {
 
         inv.setItem(GuiConstants.BUTTON_EXIT, makeItem(Material.BARRIER, "&cBack",
                 "&7Return to target list."));
+
+        // Inheritance management button (only for groups)
+        if (isGroup) {
+            GroupData gd = service.getGroup(targetId);
+            String inheritsFrom = (gd != null && !gd.getParents().isEmpty())
+                    ? "&7Currently inherits: " + String.join(", ", gd.getParents())
+                    : "&7No inheritance configured";
+            inv.setItem(GuiConstants.BUTTON_INHERITANCE, makeItem(Material.IRON_BARS,
+                    "&6Inheritance",
+                    inheritsFrom,
+                    "&eClick to manage parent groups."));
+        }
+
+        if (currentPage < totalPages - 1)
+            inv.setItem(GuiConstants.BUTTON_NEXT, makeItem(Material.ARROW, "&eNext Page",
+                    "&7Go to page " + (currentPage + 2) + "."));
+
+        player.openInventory(inv);
+    }
+
+    /**
+     * Opens the inheritance editor for a specific group.
+     * Shows all groups and allows toggling which ones are parents (inherited).
+     */
+    public static void openInheritanceEditor(Player player, FoliaPerms plugin,
+                                              String groupName, int page) {
+        PermissionService service = plugin.getPermissionService();
+        List<String> allGroups = new ArrayList<>(service.getGroups().keySet());
+        // Remove self from the list
+        allGroups.remove(groupName.toLowerCase());
+
+        int totalPages = Math.max(1, (int) Math.ceil((double) allGroups.size() / GuiConstants.INHERITANCE_PER_PAGE));
+        int currentPage = Math.max(0, Math.min(page, totalPages - 1));
+        int start = currentPage * GuiConstants.INHERITANCE_PER_PAGE;
+        int end = Math.min(start + GuiConstants.INHERITANCE_PER_PAGE, allGroups.size());
+
+        String title = ColorConverter.colorize("&8Inheritance \u00BB " + groupName);
+        Inventory inv = Bukkit.createInventory(
+                new InheritanceEditorHolder(plugin, groupName, currentPage),
+                GuiConstants.INHERITANCE_PAGE_SIZE, title);
+
+        GroupData gd = service.getGroup(groupName);
+        List<String> currentParents = (gd != null)
+                ? new ArrayList<>(gd.getParents())
+                : new ArrayList<>();
+
+        for (int i = start; i < end; i++) {
+            String candidateGroup = allGroups.get(i);
+            boolean isParent = currentParents.contains(candidateGroup);
+
+            Material mat = isParent ? Material.LIME_DYE : Material.RED_DYE;
+            String statusLine = isParent
+                    ? "&aPARENT  \u2714  click to remove"
+                    : "&cNOT PARENT  \u2718  click to add";
+            inv.setItem(i - start, makeItem(mat, "&f" + candidateGroup,
+                    statusLine));
+        }
+
+        // Footer
+        ItemStack pane = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ");
+        for (int i = GuiConstants.FOOTER_START; i < GuiConstants.INHERITANCE_PAGE_SIZE; i++) {
+            inv.setItem(i, pane);
+        }
+
+        if (currentPage > 0)
+            inv.setItem(GuiConstants.BUTTON_BACK, makeItem(Material.ARROW, "&ePrevious Page",
+                    "&7Go to page " + currentPage + "."));
+
+        inv.setItem(GuiConstants.BUTTON_CENTER, makeItem(Material.PAPER,
+                "&fPage " + (currentPage + 1) + " &7/ " + totalPages,
+                "&7Click groups to toggle inheritance.",
+                "&8Current parents: " + (currentParents.isEmpty() ? "none" : String.join(", ", currentParents))));
+
+        inv.setItem(GuiConstants.BUTTON_EXIT, makeItem(Material.BARRIER, "&cBack",
+                "&7Return to permission editor."));
 
         if (currentPage < totalPages - 1)
             inv.setItem(GuiConstants.BUTTON_NEXT, makeItem(Material.ARROW, "&eNext Page",

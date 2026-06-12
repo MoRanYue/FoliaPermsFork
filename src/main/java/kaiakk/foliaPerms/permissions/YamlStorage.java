@@ -18,6 +18,9 @@ public class YamlStorage {
     private final JavaPlugin plugin;
     private final File file;
 
+    /** Name of the default group that all new players are automatically added to. */
+    public static final String DEFAULT_GROUP_NAME = "default";
+
     public YamlStorage(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "permissions.yml");
@@ -88,31 +91,44 @@ public class YamlStorage {
 
     public Map<String, GroupData> loadGroups() {
         Map<String, GroupData> groups = new HashMap<>();
-        if (!file.exists()) return groups;
         
         try {
-            FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-            if (!cfg.isConfigurationSection("groups")) {
-                plugin.getLogger().fine("No groups section in permissions.yml");
-                return groups;
+            FileConfiguration cfg = null;
+            if (file.exists()) {
+                cfg = YamlConfiguration.loadConfiguration(file);
             }
             
-            var groupsSection = cfg.getConfigurationSection("groups");
-            if (groupsSection == null) return groups;
+            if (cfg != null && cfg.isConfigurationSection("groups")) {
+                var groupsSection = cfg.getConfigurationSection("groups");
+                if (groupsSection != null) {
+                    for (String key : groupsSection.getKeys(false)) {
+                        GroupData gd = new GroupData(key);
+                        if (cfg.isList("groups." + key + ".permissions")) {
+                            for (Object o : cfg.getList("groups." + key + ".permissions")) {
+                                gd.addPermission(String.valueOf(o));
+                            }
+                        }
+                        if (cfg.isList("groups." + key + ".members")) {
+                            for (Object o : cfg.getList("groups." + key + ".members")) {
+                                gd.addMember(String.valueOf(o));
+                            }
+                        }
+                        // Load inheritance: parent groups
+                        if (cfg.isList("groups." + key + ".parents")) {
+                            for (Object o : cfg.getList("groups." + key + ".parents")) {
+                                gd.addParent(String.valueOf(o));
+                            }
+                        }
+                        groups.put(key.toLowerCase(), gd);
+                    }
+                }
+            }
             
-            for (String key : groupsSection.getKeys(false)) {
-                GroupData gd = new GroupData(key);
-                if (cfg.isList("groups." + key + ".permissions")) {
-                    for (Object o : cfg.getList("groups." + key + ".permissions")) {
-                        gd.addPermission(String.valueOf(o));
-                    }
-                }
-                if (cfg.isList("groups." + key + ".members")) {
-                    for (Object o : cfg.getList("groups." + key + ".members")) {
-                        gd.addMember(String.valueOf(o));
-                    }
-                }
-                groups.put(key.toLowerCase(), gd);
+            // Ensure the default group always exists
+            if (!groups.containsKey(DEFAULT_GROUP_NAME)) {
+                plugin.getLogger().info("Creating default group '" + DEFAULT_GROUP_NAME + "' as it did not exist.");
+                GroupData defaultGroup = new GroupData(DEFAULT_GROUP_NAME);
+                groups.put(DEFAULT_GROUP_NAME, defaultGroup);
             }
             
             plugin.getLogger().fine("Loaded " + groups.size() + " groups from YAML.");
@@ -143,6 +159,8 @@ public class YamlStorage {
                 String path = "groups." + key;
                 cfg.set(path + ".permissions", e.getValue().getPermissions().stream().toList());
                 cfg.set(path + ".members", e.getValue().getMembers().stream().toList());
+                // Save inheritance: parent groups
+                cfg.set(path + ".parents", e.getValue().getParentsMutable().stream().toList());
             }
 
             cfg.save(file);

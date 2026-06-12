@@ -2,6 +2,7 @@ package kaiakk.foliaPerms.events;
 
 import kaiakk.foliaPerms.FoliaPerms;
 import kaiakk.foliaPerms.internal.ColorConverter;
+import kaiakk.foliaPerms.permissions.YamlStorage;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,6 +14,9 @@ import org.bukkit.permissions.PermissionAttachment;
 /**
  * Handles player-specific events for FoliaPerms.
  * Version: 1.13.0
+ *
+ * On join, ensures every player is assigned to the default group
+ * if they have no existing group assignment.
  */
 public class PlayerListener implements Listener {
     private final FoliaPerms plugin;
@@ -24,6 +28,17 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        
+        // Ensure the player has the default group if not assigned to any group
+        var permService = plugin.getPermissionService();
+        if (permService != null) {
+            var userData = permService.getUser(player.getUniqueId());
+            if (userData == null || userData.getGroups().isEmpty()) {
+                // This triggers getOrCreateUser which auto-assigns the default group
+                permService.getOrCreateUser(player.getUniqueId());
+                plugin.getLogger().info("Auto-assigned player " + player.getName() + " to the default group.");
+            }
+        }
         
         // Welcome message for admins
         if (player.hasPermission("folia.perms")) {

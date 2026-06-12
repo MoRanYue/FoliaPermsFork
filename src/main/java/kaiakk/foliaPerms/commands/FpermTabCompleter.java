@@ -63,7 +63,7 @@ public class FpermTabCompleter implements TabCompleter {
 
         if (sub.equals("group")) {
             if (args.length == 2) {
-                String[] opts = new String[]{"create","addperm","adduser","removeuser"};
+                String[] opts = new String[]{"create","delete","addperm","adduser","removeuser","setinherit","removeinherit","inheritance","perms"};
                 for (String s : opts) if (s.startsWith(args[1].toLowerCase())) res.add(s);
                 return res;
             }
@@ -71,6 +71,14 @@ public class FpermTabCompleter implements TabCompleter {
                 String action = args[1].toLowerCase();
                 if (action.equals("create")) {
                     return res;
+                }
+                if (action.equals("delete")) {
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream()
+                                .filter(g -> !g.equalsIgnoreCase("default"))
+                                .filter(g -> g.startsWith(args[2].toLowerCase()))
+                                .collect(Collectors.toList());
+                    }
                 }
                 if (action.equals("addperm")) {
                     if (args.length == 3) {
@@ -100,6 +108,46 @@ public class FpermTabCompleter implements TabCompleter {
                     }
                     if (args.length == 4) {
                         return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).filter(n -> n.toLowerCase().startsWith(args[3].toLowerCase())).collect(Collectors.toList());
+                    }
+                }
+                if (action.equals("setinherit")) {
+                    if (args.length == 3) {
+                        // Suggest child groups
+                        return service.getGroups().keySet().stream()
+                                .filter(g -> g.startsWith(args[2].toLowerCase()))
+                                .collect(Collectors.toList());
+                    }
+                    if (args.length == 4) {
+                        // Suggest parent groups (excluding self)
+                        String child = args[2].toLowerCase();
+                        return service.getGroups().keySet().stream()
+                                .filter(g -> !g.equals(child))
+                                .filter(g -> g.startsWith(args[3].toLowerCase()))
+                                .collect(Collectors.toList());
+                    }
+                }
+                if (action.equals("removeinherit")) {
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream()
+                                .filter(g -> g.startsWith(args[2].toLowerCase()))
+                                .collect(Collectors.toList());
+                    }
+                    if (args.length == 4) {
+                        // Suggest only parents of the specified group
+                        String groupName = args[2].toLowerCase();
+                        var gd = service.getGroup(groupName);
+                        if (gd != null) {
+                            return gd.getParents().stream()
+                                    .filter(p -> p.startsWith(args[3].toLowerCase()))
+                                    .collect(Collectors.toList());
+                        }
+                    }
+                }
+                if (action.equals("inheritance") || action.equals("perms")) {
+                    if (args.length == 3) {
+                        return service.getGroups().keySet().stream()
+                                .filter(g -> g.startsWith(args[2].toLowerCase()))
+                                .collect(Collectors.toList());
                     }
                 }
             }

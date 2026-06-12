@@ -13,7 +13,7 @@ import org.bukkit.permissions.PermissionAttachment;
 
 /**
  * Handles player-specific events for FoliaPerms.
- * Version: 1.13.0
+ * Version: 0.1.0+26.1.2
  *
  * On join, ensures every player is assigned to the default group
  * if they have no existing group assignment.

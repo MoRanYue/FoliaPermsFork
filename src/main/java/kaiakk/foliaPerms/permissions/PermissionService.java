@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Handles user/group permissions with caching and async operations.
  * Supports group inheritance (a group can inherit permissions from parent groups)
  * and a default group that all players implicitly belong to.
- * Version: 1.13.0
+ * Version: 0.1.0+26.1.2
  */
 public class PermissionService {
     private final JavaPlugin plugin;

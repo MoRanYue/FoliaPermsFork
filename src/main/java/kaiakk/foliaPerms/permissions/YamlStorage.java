@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * YAML-based storage for user and group permission data.
- * Version: 1.13.0
+ * Version: 0.1.0+26.1.2
  */
 public class YamlStorage {
     private final JavaPlugin plugin;

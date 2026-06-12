@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 /**
  * GUI factory for the FoliaPerms permission editor.
- * Version: 1.13.0
+ * Version: 0.1.0+26.1.2
  */
 public class EditorGui {
 

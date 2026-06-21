@@ -132,34 +132,18 @@ public class FpermCommand implements CommandExecutor {
                         if (action.equals("addperm")) {
                             service.addUserPermission(id, perm);
                             plugin.getPermissionService().saveAsync();
-                            var onlineTarget = Bukkit.getPlayerExact(playerName);
-                            if (onlineTarget != null) {
-                                plugin.refreshPlayerAttachment(onlineTarget);
-                                try {
-                                    onlineTarget.recalculatePermissions();
-                                } catch (Throwable ignored) {}
-                                try {
-                                    onlineTarget.updateCommands();
-                                } catch (Throwable ignored) {}
-                            }
                             send(sender, ColorConverter.colorize("&aAdded permission " + perm + " to " + playerName));
                         } else if (action.equals("removeperm")) {
                             service.removeUserPermission(id, perm);
                             plugin.getPermissionService().saveAsync();
-                            var onlineTarget2 = Bukkit.getPlayerExact(playerName);
-                            if (onlineTarget2 != null) plugin.refreshPlayerAttachment(onlineTarget2);
                             send(sender, ColorConverter.colorize("&aRemoved permission " + perm + " from " + playerName));
                         } else if (action.equals("addgroup")) {
                             service.addUserToGroup(id, perm);
                             plugin.getPermissionService().saveAsync();
-                            var onlineTarget3 = Bukkit.getPlayerExact(playerName);
-                            if (onlineTarget3 != null) plugin.refreshPlayerAttachment(onlineTarget3);
                             send(sender, ColorConverter.colorize("&aAdded " + playerName + " to group " + perm));
                         } else if (action.equals("removegroup")) {
                             service.removeUserFromGroup(id, perm);
                             plugin.getPermissionService().saveAsync();
-                            var onlineTarget4 = Bukkit.getPlayerExact(playerName);
-                            if (onlineTarget4 != null) plugin.refreshPlayerAttachment(onlineTarget4);
                             send(sender, ColorConverter.colorize("&aRemoved " + playerName + " from group " + perm));
                         } else {
                             send(sender, ColorConverter.colorize("&cUnknown user action: " + action));
@@ -180,13 +164,11 @@ public class FpermCommand implements CommandExecutor {
                             if (args.length < 3) { send(sender, ColorConverter.colorize("Usage: /fperm group create <name>")); break; }
                             service.createGroup(args[2]);
                             plugin.getPermissionService().saveAsync();
-                            plugin.refreshAllAttachments();
                             send(sender, ColorConverter.colorize("&aGroup created: " + args[2]));
                         } else if (gaction.equals("addperm")) {
                             if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group addperm <name> <perm>")); break; }
                             service.addGroupPermission(args[2], args[3]);
                             plugin.getPermissionService().saveAsync();
-                            plugin.refreshAllAttachments();
                             send(sender, ColorConverter.colorize("&aAdded permission " + args[3] + " to group " + args[2]));
                         } else if (gaction.equals("adduser")) {
                             if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group adduser <name> <player>")); break; }
@@ -198,8 +180,6 @@ public class FpermCommand implements CommandExecutor {
                             }
                             service.addUserToGroup(target.getUniqueId(), gname);
                             plugin.getPermissionService().saveAsync();
-                            var ot = Bukkit.getPlayerExact(args[3]);
-                            if (ot != null) plugin.refreshPlayerAttachment(ot);
                             send(sender, ColorConverter.colorize("&aAdded " + args[3] + " to group " + gname));
                         } else if (gaction.equals("delete")) {
                             if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group delete <name>")); break; }
@@ -211,7 +191,6 @@ public class FpermCommand implements CommandExecutor {
                             boolean deleted = service.deleteGroup(gdel);
                             if (deleted) {
                                 plugin.getPermissionService().saveAsync();
-                                plugin.refreshAllAttachments();
                                 send(sender, ColorConverter.colorize("&aGroup '" + gdel + "' deleted. Members re-assigned to default group."));
                             } else {
                                 send(sender, ColorConverter.colorize("&cCould not delete group '" + gdel + "'. It may not exist or is protected."));
@@ -226,15 +205,12 @@ public class FpermCommand implements CommandExecutor {
                             }
                             service.removeUserFromGroup(target2.getUniqueId(), gname2);
                             plugin.getPermissionService().saveAsync();
-                            var ot2 = Bukkit.getPlayerExact(args[3]);
-                            if (ot2 != null) plugin.refreshPlayerAttachment(ot2);
                             send(sender, ColorConverter.colorize("&aRemoved " + args[3] + " from group " + gname2));
                         } else if (gaction.equals("setinherit")) {
                             if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group setinherit <group> <parent>")); break; }
                             boolean success = service.addGroupInheritance(args[2], args[3]);
                             if (success) {
                                 plugin.getPermissionService().saveAsync();
-                                plugin.refreshAllAttachments();
                                 send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' now inherits from '" + args[3] + "'."));
                             } else {
                                 send(sender, ColorConverter.colorize("&cFailed to set inheritance. Check for circular dependencies."));
@@ -243,7 +219,6 @@ public class FpermCommand implements CommandExecutor {
                             if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group removeinherit <group> <parent>")); break; }
                             service.removeGroupInheritance(args[2], args[3]);
                             plugin.getPermissionService().saveAsync();
-                            plugin.refreshAllAttachments();
                             send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' no longer inherits from '" + args[3] + "'."));
                         } else if (gaction.equals("inheritance")) {
                             if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group inheritance <group>")); break; }

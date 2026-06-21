@@ -125,15 +125,18 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
     }
 
     /**
-     * Refreshes permission attachment for a specific player.
+     * Core refresh logic - runs synchronously on the player's region thread.
+     * This is the private implementation that does the actual work.
      */
-    public void refreshPlayerAttachment(Player player) {
+    private void refreshPlayerAttachmentSync(Player player) {
         if (player == null || permissionService == null) return;
         try {
             UUID id = player.getUniqueId();
             PermissionAttachment old = attachments.remove(id);
             if (old != null) {
-                try { player.removeAttachment(old); } catch (Exception ignored) {}
+                try { player.removeAttachment(old); } catch (Exception ex) {
+                    getLogger().warning("Error removing old attachment for " + player.getName() + ": " + ex.getMessage());
+                }
             }
 
             PermissionAttachment attach = player.addAttachment(this);
@@ -153,14 +156,14 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             try {
                 player.recalculatePermissions();
                 getLogger().fine("Recalculated permissions for " + player.getName());
-                try {
-                    player.updateCommands();
-                    getLogger().fine("Updated command tree for " + player.getName());
-                } catch (Throwable t) {
-                    getLogger().warning("Failed to update command tree for " + player.getName() + ": " + t.getMessage());
-                }
             } catch (Throwable t) {
                 getLogger().warning("Failed to recalculate permissions for " + player.getName() + ": " + t.getMessage());
+            }
+            try {
+                player.updateCommands();
+                getLogger().fine("Updated command tree for " + player.getName());
+            } catch (Throwable t) {
+                getLogger().warning("Failed to update command tree for " + player.getName() + ": " + t.getMessage());
             }
         } catch (Exception e) {
             getLogger().severe("Failed to refresh attachment for " + player.getName() + ": " + e.getMessage());
@@ -168,11 +171,57 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
     }
 
     /**
+     * Refreshes permission attachment for a specific player.
+     * Uses Folia's player region scheduler to ensure thread safety.
+     */
+    public void refreshPlayerAttachment(Player player) {
+        if (player == null || permissionService == null) return;
+        
+        // Schedule on the player's region thread (Folia-compatible)
+        // player.getScheduler().run() will execute on the correct region.
+        try {
+            player.getScheduler().run(this, scheduledTask -> {
+                refreshPlayerAttachmentSync(player);
+            }, null);
+        } catch (Throwable t) {
+            getLogger().warning("Could not schedule refresh on player region for " + player.getName() + ": " + t.getMessage());
+            // Fallback: try direct execution (may work if already on the correct thread)
+            refreshPlayerAttachmentSync(player);
+        }
+    }
+
+    /**
      * Refreshes permission attachments for all online players.
+     * Uses Folia's global region scheduler for thread safety.
      */
     public void refreshAllAttachments() {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            refreshPlayerAttachment(p);
+        Player[] onlinePlayers = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        if (onlinePlayers.length == 0) return;
+        
+        // Try global region scheduler (Folia-compatible)
+        try {
+            Bukkit.getGlobalRegionScheduler().run(this, scheduledTask -> {
+                for (Player p : onlinePlayers) {
+                    refreshPlayerAttachment(p);
+                }
+            });
+        } catch (Throwable t) {
+            // Fallback: try direct execution (works if already on global region)
+            getLogger().warning("Global region scheduler unavailable, falling back to direct execution: " + t.getMessage());
+            for (Player p : onlinePlayers) {
+                refreshPlayerAttachment(p);
+            }
+        }
+    }
+
+    /**
+     * Convenience method to refresh a player by UUID (if online).
+     */
+    public void refreshPlayer(UUID playerId) {
+        if (playerId == null) return;
+        Player player = Bukkit.getPlayer(playerId);
+        if (player != null) {
+            refreshPlayerAttachment(player);
         }
     }
 

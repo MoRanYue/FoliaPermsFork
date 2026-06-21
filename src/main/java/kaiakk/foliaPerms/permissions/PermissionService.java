@@ -255,19 +255,11 @@ public class PermissionService {
         plugin.getLogger().info("Added permission '" + normalized + "' to user " + id.toString());
         try {
             if (plugin instanceof FoliaPerms) {
-                var fp = (FoliaPerms) plugin;
-                var player = fp.getServer().getPlayer(id);
-                if (player != null) {
-                    if (Bukkit.isPrimaryThread()) {
-                        fp.refreshPlayerAttachment(player);
-                    } else {
-                        try {
-                            plugin.getServer().getScheduler().runTask(plugin, () -> fp.refreshPlayerAttachment(player));
-                        } catch (Throwable ignored) {}
-                    }
-                }
+                ((FoliaPerms) plugin).refreshPlayer(id);
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh player " + id + " after adding permission: " + e.getMessage());
+        }
     }
 
     public void removeUserPermission(UUID id, String node) {
@@ -276,19 +268,11 @@ public class PermissionService {
         plugin.getLogger().info("Removed permission '" + node + "' from user " + id.toString());
         try {
             if (plugin instanceof FoliaPerms) {
-                var fp = (FoliaPerms) plugin;
-                var player = fp.getServer().getPlayer(id);
-                if (player != null) {
-                    if (Bukkit.isPrimaryThread()) {
-                        fp.refreshPlayerAttachment(player);
-                    } else {
-                        try {
-                            plugin.getServer().getScheduler().runTask(plugin, () -> fp.refreshPlayerAttachment(player));
-                        } catch (Throwable ignored) {}
-                    }
-                }
+                ((FoliaPerms) plugin).refreshPlayer(id);
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh player " + id + " after removing permission: " + e.getMessage());
+        }
     }
 
     public GroupData createGroup(String name) {
@@ -319,13 +303,11 @@ public class PermissionService {
         plugin.getLogger().info("Added group permission '" + normalized + "' to group " + name);
         try {
             if (plugin instanceof FoliaPerms) {
-                JavaPlugin p = plugin;
-                plugin.getServer().getScheduler().runTask(p, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    fp.refreshAllAttachments();
-                });
+                ((FoliaPerms) plugin).refreshAllAttachments();
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh attachments after adding group permission: " + e.getMessage());
+        }
     }
 
 
@@ -371,14 +353,11 @@ public class PermissionService {
         
         try {
             if (plugin instanceof FoliaPerms) {
-                JavaPlugin p = plugin;
-                plugin.getServer().getScheduler().runTask(p, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    var player = fp.getServer().getPlayer(id);
-                    if (player != null) fp.refreshPlayerAttachment(player);
-                });
+                ((FoliaPerms) plugin).refreshPlayer(id);
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh player " + id + " after adding to group: " + e.getMessage());
+        }
     }
 
     /**
@@ -429,14 +408,11 @@ public class PermissionService {
         
         try {
             if (plugin instanceof FoliaPerms) {
-                JavaPlugin p = plugin;
-                plugin.getServer().getScheduler().runTask(p, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    var player = fp.getServer().getPlayer(id);
-                    if (player != null) fp.refreshPlayerAttachment(player);
-                });
+                ((FoliaPerms) plugin).refreshPlayer(id);
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh player " + id + " after removing from group: " + e.getMessage());
+        }
     }
 
     /**
@@ -542,12 +518,11 @@ public class PermissionService {
         plugin.getLogger().info("Removed permission '" + node + "' from group " + name);
         try {
             if (plugin instanceof FoliaPerms) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    fp.refreshAllAttachments();
-                });
+                ((FoliaPerms) plugin).refreshAllAttachments();
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh attachments after removing group permission: " + e.getMessage());
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -587,12 +562,11 @@ public class PermissionService {
         // Refresh all online players
         try {
             if (plugin instanceof FoliaPerms) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    fp.refreshAllAttachments();
-                });
+                ((FoliaPerms) plugin).refreshAllAttachments();
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh attachments after adding inheritance: " + e.getMessage());
+        }
         
         return true;
     }
@@ -613,12 +587,11 @@ public class PermissionService {
             // Refresh all online players
             try {
                 if (plugin instanceof FoliaPerms) {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        var fp = (FoliaPerms) plugin;
-                        fp.refreshAllAttachments();
-                    });
+                    ((FoliaPerms) plugin).refreshAllAttachments();
                 }
-            } catch (Throwable ignored) {}
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to refresh attachments after removing inheritance: " + e.getMessage());
+            }
         }
     }
 
@@ -727,12 +700,11 @@ public class PermissionService {
         // Refresh all players
         try {
             if (plugin instanceof FoliaPerms) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    var fp = (FoliaPerms) plugin;
-                    fp.refreshAllAttachments();
-                });
+                ((FoliaPerms) plugin).refreshAllAttachments();
             }
-        } catch (Throwable ignored) {}
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to refresh attachments after deleting group: " + e.getMessage());
+        }
 
         return true;
     }

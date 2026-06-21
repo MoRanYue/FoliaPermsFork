@@ -1,10 +1,13 @@
 name: FoliaPerms
 version: '${version}'
 main: kaiakk.foliaPerms.FoliaPerms
-api-version: '1.21'
-authors: [KaiakK]
-description: A simple Folia-only permission manager with YAML storage, GUI editor, and advanced permission handling.
-website: https://modrinth.com/plugin/foliaperms
+api-version: '26.1'
+authors: [
+  KaiakK,
+  MoRanYue
+]
+description: A fork of simple Folia-only permission manager with container UI editor, group inheritance, and advanced permission handling.
+website: https://github.com/MoRanYue/FoliaPermsFork
 folia-supported: true
 load: STARTUP
 

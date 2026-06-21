@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * FoliaPermsFork - A simple permission manager for Folia servers.
- * Version: 0.1.0+26.1.2
+ * Version: 0.1.1+26.1.2
  *
  * This plugin provides:
  * - User and group-based permission management
@@ -53,14 +53,14 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
             getServer().getPluginManager().disablePlugin(this);
         } else {
             getLogger().info("Folia environment detected. FoliaPerms is ready to enable.");
-            getLogger().info("Enabling FoliaPermsFork v0.1.0+26.1.2...");
+            getLogger().info("Enabling FoliaPermsFork v0.1.1+26.1.2...");
             getLogger().info("Loading all permissions data...");
         }
     }
     
     @Override
     public void onEnable() {
-        getLogger().info("FoliaPermsFork v0.1.0+26.1.2 enabled successfully. Welcome to the Folia environment!");
+        getLogger().info("FoliaPermsFork v0.1.1+26.1.2 enabled successfully. Welcome to the Folia environment!");
 
         this.permissionService = new PermissionService(this);
         try {
@@ -104,7 +104,7 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
 
     @Override
     public void onDisable() {
-        getLogger().info("FoliaPermsFork v0.1.0+26.1.2 disabling...");
+        getLogger().info("FoliaPermsFork v0.1.1+26.1.2 disabling...");
         getLogger().info("Saving permissions...");
         if (this.permissionService != null) {
             try {

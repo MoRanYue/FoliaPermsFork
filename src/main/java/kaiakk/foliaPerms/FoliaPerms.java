@@ -3,6 +3,7 @@ package kaiakk.foliaPerms;
 import kaiakk.foliaPerms.api.FoliaPermsAPI;
 import kaiakk.foliaPerms.commands.FpermCommand;
 import kaiakk.foliaPerms.events.PlayerListener;
+import kaiakk.foliaPerms.internal.UpdateChecker;
 import kaiakk.foliaPerms.permissions.PermissionService;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -100,6 +101,9 @@ public final class FoliaPerms extends JavaPlugin implements FoliaPermsAPI {
         } catch (Exception e) {
             kaiakk.foliaPerms.internal.ErrorHandler.handle(this, "Failed to gather registered permissions", e);
         }
+
+        // Asynchronously check for updates from GitHub
+        UpdateChecker.check(getPluginMeta().getVersion(), getLogger());
     }
 
     @Override

@@ -28,7 +28,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        
+
         // Ensure the player has the default group if not assigned to any group
         var permService = plugin.getPermissionService();
         if (permService != null) {
@@ -36,35 +36,34 @@ public class PlayerListener implements Listener {
             if (userData == null || userData.getGroups().isEmpty()) {
                 // This triggers getOrCreateUser which auto-assigns the default group
                 permService.getOrCreateUser(player.getUniqueId());
-                plugin.getLogger().info("Auto-assigned player " + player.getName() + " to the default group.");
+                plugin.getLogger().info(plugin.tlRaw("console.permission.auto-assigned", player.getName()));
             }
         }
-        
+
         // Welcome message for admins
         if (player.hasPermission("folia.perms")) {
-            String welcome = ColorConverter.colorize("&eFoliaPerms active!");
-            player.sendMessage(welcome);
+            player.sendMessage(plugin.tl("chat.info.welcome"));
         }
-        
+
         // Apply permission attachment
         try {
             plugin.refreshPlayerAttachment(player);
-            plugin.getLogger().fine("Applied permission attachment for " + player.getName());
+            plugin.getLogger().fine(plugin.tlRaw("console.permission.attachment-applied", player.getName()));
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to apply permissions to " + player.getName() + ": " + e.getMessage());
+            plugin.getLogger().warning(plugin.tlRaw("console.permission.attachment-error", player.getName(), e.getMessage()));
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        
+
         // Clean up permission attachment
         try {
             plugin.removePlayerAttachment(player.getUniqueId());
-            plugin.getLogger().fine("Cleaned up permission attachment for " + player.getName());
+            plugin.getLogger().fine(plugin.tlRaw("console.permission.attachment-cleaned", player.getName()));
         } catch (Exception e) {
-            plugin.getLogger().warning("Error cleaning up attachment for " + player.getName() + ": " + e.getMessage());
+            plugin.getLogger().warning(plugin.tlRaw("console.permission.attachment-cleanup-error", player.getName(), e.getMessage()));
         }
     }
 }

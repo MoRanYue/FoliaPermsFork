@@ -17,9 +17,6 @@ import java.util.stream.Collectors;
 
 /**
  * Core permission system logic and data management.
- * Handles user/group permissions with caching and async operations.
- * Supports group inheritance (a group can inherit permissions from parent groups)
- * and a default group that all players implicitly belong to.
  * Version: 0.1.0+26.1.2
  */
 public class PermissionService {
@@ -29,13 +26,33 @@ public class PermissionService {
     private final Map<UUID, UserData> users = new ConcurrentHashMap<>();
     private final Map<String, GroupData> groups = new ConcurrentHashMap<>();
     private final java.util.Set<String> registeredPermissions = ConcurrentHashMap.newKeySet();
-    
+
     // Cache for sorted permissions (for UI efficiency)
     private List<String> cachedSortedPermissions = null;
 
     public PermissionService(JavaPlugin plugin) {
         this.plugin = plugin;
         this.storage = new YamlStorage(plugin);
+    }
+
+    /**
+     * Convenience accessor for localized console messages.
+     */
+    private String tlRaw(String key, Object... args) {
+        if (plugin instanceof FoliaPerms) {
+            return ((FoliaPerms) plugin).tlRaw(key, args);
+        }
+        return key;
+    }
+
+    /**
+     * Convenience accessor for localized colored messages.
+     */
+    private String tl(String key, Object... args) {
+        if (plugin instanceof FoliaPerms) {
+            return ((FoliaPerms) plugin).tl(key, args);
+        }
+        return key;
     }
 
     public void load() {
@@ -45,11 +62,11 @@ public class PermissionService {
         Map<String, GroupData> loadedGroups = storage.loadGroups();
         users.putAll(loadedUsers);
         groups.putAll(loadedGroups);
-        
+
         // Ensure the default group always exists in memory
         ensureDefaultGroupExists();
-        
-        plugin.getLogger().info("Loaded " + users.size() + " users and " + groups.size() + " groups from permissions.yml");
+
+        plugin.getLogger().info(tlRaw("console.permission.loaded", users.size(), groups.size()));
         if (!users.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             int count = 0;
@@ -57,7 +74,7 @@ public class PermissionService {
                 if (count++ < 5) sb.append(id.toString()).append(", ");
             }
             if (users.size() > 5) sb.append("... and ").append(users.size() - 5).append(" more");
-            plugin.getLogger().fine("Loaded user UUIDs: " + sb.toString());
+            plugin.getLogger().fine(tlRaw("console.player.uuids-loaded", sb.toString()));
         }
         if (!groups.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -66,12 +83,12 @@ public class PermissionService {
                 if (count++ < 5) sb.append(g).append(", ");
             }
             if (groups.size() > 5) sb.append("... and ").append(groups.size() - 5).append(" more");
-            plugin.getLogger().fine("Loaded groups: " + sb.toString());
+            plugin.getLogger().fine(tlRaw("console.player.groups-loaded", sb.toString()));
         }
     }
 
     public void loadAsync(Runnable callback) {
-        plugin.getLogger().info("Scheduling async permissions load (background thread)");
+        plugin.getLogger().info(tlRaw("console.storage.scheduling-async"));
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             Map<UUID, UserData> loadedUsers = storage.loadUsers();
             Map<String, GroupData> loadedGroups = storage.loadGroups();
@@ -81,7 +98,7 @@ public class PermissionService {
                 users.putAll(loadedUsers);
                 groups.putAll(loadedGroups);
                 ensureDefaultGroupExists();
-                plugin.getLogger().info("Loaded " + users.size() + " users and " + groups.size() + " groups from permissions.yml");
+                plugin.getLogger().info(tlRaw("console.permission.loaded", users.size(), groups.size()));
                 if (callback != null) {
                     try { callback.run(); } catch (Throwable t) { kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Exception in load callback", t); }
                 }
@@ -91,11 +108,10 @@ public class PermissionService {
 
     /**
      * Ensures the default group exists in the groups map.
-     * This is called after every load operation.
      */
     private void ensureDefaultGroupExists() {
         groups.computeIfAbsent(YamlStorage.DEFAULT_GROUP_NAME, k -> {
-            plugin.getLogger().info("Created implicit default group '" + YamlStorage.DEFAULT_GROUP_NAME + "' in memory.");
+            plugin.getLogger().info(tlRaw("console.plugin.default-group-created", YamlStorage.DEFAULT_GROUP_NAME));
             return new GroupData(YamlStorage.DEFAULT_GROUP_NAME);
         });
     }
@@ -103,7 +119,7 @@ public class PermissionService {
     public void gatherRegisteredPermissions(org.bukkit.plugin.Plugin plugin) {
         registeredPermissions.clear();
         cachedSortedPermissions = null; // Invalidate cache
-        
+
         var pm = plugin.getServer().getPluginManager();
         for (org.bukkit.permissions.Permission p : pm.getPermissions()) {
             if (p == null) continue;
@@ -197,15 +213,13 @@ public class PermissionService {
             groupsSnapshot.put(key, copy);
         }
 
-        // Use the Folia/Paper AsyncScheduler which works on both platforms.
-        // Bukkit.getScheduler().runTaskAsynchronously() is not available on Folia.
-        plugin.getLogger().fine("Scheduling async permissions save.");
+        plugin.getLogger().fine(tlRaw("console.storage.scheduling-async"));
         Bukkit.getAsyncScheduler().runNow(plugin, (task) -> {
             try {
                 storage.save(usersSnapshot, groupsSnapshot);
-                plugin.getLogger().fine("Async save completed successfully.");
+                plugin.getLogger().fine(tlRaw("console.storage.async-save-success"));
             } catch (IOException ex) {
-                plugin.getLogger().severe("Async save failed: " + ex.getMessage());
+                plugin.getLogger().severe(tlRaw("console.storage.async-save-failed", ex.getMessage()));
             }
         });
     }
@@ -213,22 +227,18 @@ public class PermissionService {
     public UserData getOrCreateUser(UUID id) {
         UserData ud = users.computeIfAbsent(id, UserData::new);
         // Ensure every user has exactly one group.
-        // New users start in the default group.
-        // If a user has somehow ended up with no groups, re-assign to default.
         if (ud.getGroups().isEmpty()) {
             ud.addGroup(YamlStorage.DEFAULT_GROUP_NAME);
             GroupData gd = getOrCreateGroup(YamlStorage.DEFAULT_GROUP_NAME);
             gd.addMember(id.toString());
-            plugin.getLogger().fine("Auto-assigned user " + id + " to default group.");
+            plugin.getLogger().fine(tlRaw("console.permission.auto-assigned", id));
         }
-        // Enforce exactly one group: if a user somehow has more than one group,
-        // collapse to just the first one (excluding default if possible).
+        // Enforce exactly one group
         if (ud.getGroups().size() > 1) {
             String primary = ud.getGroups().stream()
                 .filter(g -> !g.equals(YamlStorage.DEFAULT_GROUP_NAME))
                 .findFirst()
                 .orElse(YamlStorage.DEFAULT_GROUP_NAME);
-            // Remove all groups, then add back only the primary
             for (String oldGroup : new java.util.HashSet<>(ud.getGroups())) {
                 ud.removeGroup(oldGroup);
                 GroupData oldGd = groups.get(oldGroup.toLowerCase());
@@ -237,7 +247,7 @@ public class PermissionService {
             ud.addGroup(primary);
             GroupData primaryGd = getOrCreateGroup(primary);
             primaryGd.addMember(id.toString());
-            plugin.getLogger().fine("Collapsed user " + id + " to single group: " + primary);
+            plugin.getLogger().fine(tlRaw("console.permission.collapsed-user", id, primary));
         }
         return ud;
     }
@@ -252,7 +262,7 @@ public class PermissionService {
         getOrCreateUser(id).addPermission(normalized);
         registeredPermissions.add(normalized);
         cachedSortedPermissions = null; // Invalidate cache
-        plugin.getLogger().info("Added permission '" + normalized + "' to user " + id.toString());
+        plugin.getLogger().info(tlRaw("console.permission.added-user", normalized, id.toString()));
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshPlayer(id);
@@ -265,7 +275,7 @@ public class PermissionService {
     public void removeUserPermission(UUID id, String node) {
         UserData ud = getUser(id);
         if (ud != null) ud.removePermission(node);
-        plugin.getLogger().info("Removed permission '" + node + "' from user " + id.toString());
+        plugin.getLogger().info(tlRaw("console.permission.removed-user", node, id.toString()));
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshPlayer(id);
@@ -280,10 +290,6 @@ public class PermissionService {
         return groups.computeIfAbsent(key, GroupData::new);
     }
 
-    /**
-     * Gets or creates a group. Unlike createGroup, this ensures the group
-     * is initialized even if it doesn't exist yet.
-     */
     private GroupData getOrCreateGroup(String name) {
         return groups.computeIfAbsent(name.toLowerCase(), GroupData::new);
     }
@@ -300,7 +306,7 @@ public class PermissionService {
         gd.addPermission(normalized);
         registeredPermissions.add(normalized);
         cachedSortedPermissions = null; // Invalidate cache
-        plugin.getLogger().info("Added group permission '" + normalized + "' to group " + name);
+        plugin.getLogger().info(tlRaw("console.permission.added-group", normalized, name));
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshAllAttachments();
@@ -310,47 +316,33 @@ public class PermissionService {
         }
     }
 
-
-    /**
-     * Adds a user to a group.
-     * <p>
-     * <strong>Single-group enforcement:</strong> A user can only belong to
-     * exactly one group at a time. Adding a user to a new group will
-     * automatically remove them from their current group (including the
-     * default group). This ensures every user has precisely one primary group.
-     * </p>
-     */
     public void addUserToGroup(UUID id, String group) {
         if (group == null) return;
         String newGroupKey = group.toLowerCase();
-        
+
         UserData ud = getOrCreateUser(id);
-        
-        // Find the user's current group(s) before we change anything
+
         Set<String> currentGroups = new HashSet<>(ud.getGroups());
-        
-        // If user is already in this exact group, nothing to do
+
         if (currentGroups.size() == 1 && currentGroups.contains(newGroupKey)) {
-            plugin.getLogger().fine("User " + id + " is already in group '" + group + "'.");
+            plugin.getLogger().fine(tlRaw("console.permission.user-already-group", id, group));
             return;
         }
-        
-        // Step 1: Remove user from ALL current groups
+
         for (String oldGroup : currentGroups) {
             ud.removeGroup(oldGroup);
             GroupData oldGd = groups.get(oldGroup.toLowerCase());
             if (oldGd != null) {
                 oldGd.removeMember(id.toString());
-                plugin.getLogger().fine("Removed user " + id + " from previous group '" + oldGroup + "'.");
+                plugin.getLogger().fine(tlRaw("console.permission.user-removed-prev", id, oldGroup));
             }
         }
-        
-        // Step 2: Add user to the new group (this becomes their ONLY group)
+
         ud.addGroup(newGroupKey);
         GroupData gd = createGroup(group);
         gd.addMember(id.toString());
-        plugin.getLogger().info("User " + id + " is now in group '" + group + "' (single-group mode).");
-        
+        plugin.getLogger().info(tlRaw("console.permission.user-added-group", id, group));
+
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshPlayer(id);
@@ -360,52 +352,40 @@ public class PermissionService {
         }
     }
 
-    /**
-     * Removes a user from a group.
-     * <p>
-     * Users cannot be left group-less. If the user's only group is being
-     * removed, they will be automatically re-assigned to the default group.
-     * Users in the default group cannot be removed from it.
-     * </p>
-     */
     public void removeUserFromGroup(UUID id, String group) {
         if (group == null) return;
         String key = group.toLowerCase();
-        
+
         UserData ud = getUser(id);
         if (ud == null) {
-            plugin.getLogger().warning("Cannot remove user " + id + " from group: user not found.");
+            plugin.getLogger().warning(tlRaw("console.permission.user-not-found", id, group));
             return;
         }
-        
-        // Check if the user is actually in this group
+
         if (!ud.getGroups().contains(key)) {
-            plugin.getLogger().warning("User " + id + " is not in group '" + group + "'.");
+            plugin.getLogger().warning(tlRaw("console.permission.user-not-in-group", id, group));
             return;
         }
-        
-        // If user is only in the default group, prevent removal
+
         if (key.equals(YamlStorage.DEFAULT_GROUP_NAME) && ud.getGroups().size() == 1) {
-            plugin.getLogger().warning("Cannot remove user " + id + " from the default group (they must always have a group).");
+            plugin.getLogger().warning(tlRaw("console.permission.user-cannot-remove-default", id));
             return;
         }
-        
-        // Remove from the specified group
+
         ud.removeGroup(key);
         GroupData gd = groups.get(key);
         if (gd != null) {
             gd.removeMember(id.toString());
         }
-        plugin.getLogger().info("Removed user " + id + " from group '" + group + "'.");
-        
-        // If user now has no groups, auto-assign back to default
+        plugin.getLogger().info(tlRaw("console.permission.user-removed-group", id, group));
+
         if (ud.getGroups().isEmpty()) {
             ud.addGroup(YamlStorage.DEFAULT_GROUP_NAME);
             GroupData defaultGd = getOrCreateGroup(YamlStorage.DEFAULT_GROUP_NAME);
             defaultGd.addMember(id.toString());
-            plugin.getLogger().info("Auto-assigned user " + id + " back to default group after removal from '" + group + "'.");
+            plugin.getLogger().info(tlRaw("console.permission.user-auto-default", id, group));
         }
-        
+
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshPlayer(id);
@@ -415,46 +395,27 @@ public class PermissionService {
         }
     }
 
-    /**
-     * Checks if a player has a permission.
-     * Supports wildcard permissions (e.g., "plugin.*")
-     * Falls back to the default group if the player has no explicit groups.
-     * Resolves group inheritance chains recursively.
-     */
     public boolean hasPermission(UUID id, String node) {
         if (node == null) return false;
         String normalized = node.toLowerCase();
-        
-        // Collect all applicable group names for this user
+
         Set<String> groupsToCheck = new HashSet<>();
-        
+
         UserData ud = users.get(id);
         if (ud != null) {
-            // Direct permission check (user-specific override)
             if (ud.getPermissions().contains(normalized)) return true;
-            
-            // Wildcard check for direct user permissions
             if (ud.getPermissions().contains(normalized + ".*")) return true;
-            
-            // Add user's explicit groups
             groupsToCheck.addAll(ud.getGroups());
         }
-        
-        // If the user has no groups at all, fall back to the default group
+
         if (groupsToCheck.isEmpty()) {
             groupsToCheck.add(YamlStorage.DEFAULT_GROUP_NAME);
         }
-        
-        // Check all groups with inheritance resolution
+
         return checkAnyGroupPermission(groupsToCheck, normalized);
     }
 
-    /**
-     * Checks if any of the given groups (or their ancestors via inheritance)
-     * grant the specified permission node.
-     */
     private boolean checkAnyGroupPermission(Set<String> groupNames, String node) {
-        // Use a visited set to detect cycles across the entire inheritance graph
         Set<String> visited = ConcurrentHashMap.newKeySet();
         for (String g : groupNames) {
             if (checkGroupPermissionRecursive(g, node, visited)) return true;
@@ -462,43 +423,25 @@ public class PermissionService {
         return false;
     }
 
-    /**
-     * Recursively checks a group and all its parent (ancestor) groups
-     * for the given permission node, with cycle detection.
-     */
     private boolean checkGroupPermissionRecursive(String groupName, String node, Set<String> visited) {
         String key = groupName.toLowerCase();
         GroupData gd = groups.get(key);
         if (gd == null) return false;
-        
-        // Cycle detection
         if (!visited.add(key)) return false;
-        
-        // Check this group's own permissions
         if (gd.getPermissions().contains(node)) return true;
         if (gd.getPermissions().contains(node + ".*")) return true;
-        
-        // Recursively check parent groups (ancestors)
         for (String parentName : gd.getParents()) {
             if (checkGroupPermissionRecursive(parentName, node, visited)) return true;
         }
-        
         return false;
     }
 
-    /**
-     * Checks if a group (including inherited permissions) has a specific permission.
-     * This is a public convenience method that internally uses the recursive check.
-     */
     public boolean groupHasPermission(String name, String node) {
         if (name == null || node == null) return false;
         Set<String> visited = ConcurrentHashMap.newKeySet();
         return checkGroupPermissionRecursive(name, node.toLowerCase(), visited);
     }
 
-    /**
-     * Checks if a group has a permission directly (without inheritance).
-     */
     public boolean groupHasDirectPermission(String name, String node) {
         if (name == null || node == null) return false;
         GroupData gd = groups.get(name.toLowerCase());
@@ -515,7 +458,7 @@ public class PermissionService {
         if (name == null || node == null) return;
         GroupData gd = groups.get(name.toLowerCase());
         if (gd != null) gd.removePermission(node.toLowerCase());
-        plugin.getLogger().info("Removed permission '" + node + "' from group " + name);
+        plugin.getLogger().info(tlRaw("console.permission.removed-group", node, name));
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshAllAttachments();
@@ -529,37 +472,26 @@ public class PermissionService {
     //  Group Inheritance Management
     // ──────────────────────────────────────────────
 
-    /**
-     * Sets a group to inherit permissions from a parent group.
-     *
-     * @param groupName the name of the child group
-     * @param parentName the name of the parent group to inherit from
-     * @return true if the inheritance was added successfully,
-     *         false if it would create a circular dependency
-     */
     public boolean addGroupInheritance(String groupName, String parentName) {
         if (groupName == null || parentName == null) return false;
         String childKey = groupName.toLowerCase();
         String parentKey = parentName.toLowerCase();
-        
-        // Prevent self-inheritance
+
         if (childKey.equals(parentKey)) {
-            plugin.getLogger().warning("Cannot set a group to inherit from itself: " + groupName);
+            plugin.getLogger().warning(tlRaw("console.permission.inheritance-self", groupName));
             return false;
         }
-        
+
         GroupData child = createGroup(groupName);
-        
-        // Check for circular dependency before adding
+
         if (wouldCreateCycle(childKey, parentKey)) {
-            plugin.getLogger().warning("Cannot add inheritance: " + groupName + " -> " + parentName + " would create a circular dependency.");
+            plugin.getLogger().warning(tlRaw("console.permission.inheritance-cycle", groupName, parentName));
             return false;
         }
-        
+
         child.addParent(parentName);
-        plugin.getLogger().info("Group '" + groupName + "' now inherits from '" + parentName + "'.");
-        
-        // Refresh all online players
+        plugin.getLogger().info(tlRaw("console.permission.inheritance-added", groupName, parentName));
+
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshAllAttachments();
@@ -567,24 +499,16 @@ public class PermissionService {
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to refresh attachments after adding inheritance: " + e.getMessage());
         }
-        
+
         return true;
     }
 
-    /**
-     * Removes an inheritance relationship.
-     *
-     * @param groupName the child group
-     * @param parentName the parent group to stop inheriting from
-     */
     public void removeGroupInheritance(String groupName, String parentName) {
         if (groupName == null || parentName == null) return;
         GroupData gd = groups.get(groupName.toLowerCase());
         if (gd != null) {
             gd.removeParent(parentName);
-            plugin.getLogger().info("Group '" + groupName + "' no longer inherits from '" + parentName + "'.");
-            
-            // Refresh all online players
+            plugin.getLogger().info(tlRaw("console.permission.inheritance-removed", groupName, parentName));
             try {
                 if (plugin instanceof FoliaPerms) {
                     ((FoliaPerms) plugin).refreshAllAttachments();
@@ -595,21 +519,11 @@ public class PermissionService {
         }
     }
 
-    /**
-     * Checks if adding an inheritance edge (child -> parent) would create a cycle.
-     * Uses DFS from parent upwards: if we can reach childKey from parentKey,
-     * then adding childKey -> parentKey would create a cycle.
-     */
     private boolean wouldCreateCycle(String childKey, String parentKey) {
-        // Start from parentKey and walk UP the inheritance tree.
-        // If we encounter childKey, there's a cycle.
         Set<String> visited = ConcurrentHashMap.newKeySet();
         return canReach(parentKey, childKey, visited);
     }
 
-    /**
-     * DFS helper: returns true if 'target' is reachable from 'current' via parent links.
-     */
     private boolean canReach(String current, String target, Set<String> visited) {
         if (!visited.add(current)) return false;
         GroupData gd = groups.get(current);
@@ -622,10 +536,6 @@ public class PermissionService {
         return false;
     }
 
-    /**
-     * Returns the ordered inheritance chain for a group (breadth-first).
-     * The list starts with the group itself, followed by parents, grandparents, etc.
-     */
     public List<String> getGroupInheritanceChain(String groupName) {
         List<String> chain = new ArrayList<>();
         Set<String> visited = ConcurrentHashMap.newKeySet();
@@ -645,36 +555,21 @@ public class PermissionService {
         }
     }
 
-    /**
-     * Deletes a group from the system.
-     * <p>
-     * The default group ({@value YamlStorage#DEFAULT_GROUP_NAME}) <strong>cannot</strong> be
-     * deleted under any circumstances. All users who were members of the deleted
-     * group will be re-assigned to the default group, preserving the invariant
-     * that every user has exactly one group.
-     * </p>
-     *
-     * @param name the name of the group to delete
-     * @return true if the group was deleted successfully;
-     *         false if it was the protected default group or did not exist
-     */
     public boolean deleteGroup(String name) {
         if (name == null) return false;
         String key = name.toLowerCase();
 
-        // Protect the default group from deletion
         if (key.equals(YamlStorage.DEFAULT_GROUP_NAME)) {
-            plugin.getLogger().warning("Attempted to delete the default group '" + YamlStorage.DEFAULT_GROUP_NAME + "' – operation blocked.");
+            plugin.getLogger().warning(tlRaw("console.permission.default-group-protected", YamlStorage.DEFAULT_GROUP_NAME));
             return false;
         }
 
         GroupData gd = groups.get(key);
         if (gd == null) {
-            plugin.getLogger().warning("Group '" + name + "' does not exist, cannot delete.");
+            plugin.getLogger().warning(tlRaw("console.permission.group-not-exist", name));
             return false;
         }
 
-        // Remove all users from this group and re-assign them to default
         for (String memberUuidStr : new java.util.HashSet<>(gd.getMembers())) {
             try {
                 UUID memberId = UUID.fromString(memberUuidStr);
@@ -682,7 +577,6 @@ public class PermissionService {
                 if (ud != null) {
                     ud.removeGroup(key);
                 }
-                // If user has no groups left, assign to default
                 if (ud != null && ud.getGroups().isEmpty()) {
                     ud.addGroup(YamlStorage.DEFAULT_GROUP_NAME);
                     getOrCreateGroup(YamlStorage.DEFAULT_GROUP_NAME).addMember(memberUuidStr);
@@ -693,11 +587,9 @@ public class PermissionService {
             }
         }
 
-        // Remove the group from the groups map
         groups.remove(key);
-        plugin.getLogger().info("Group '" + name + "' has been deleted. All members re-assigned to default group.");
+        plugin.getLogger().info(tlRaw("console.permission.group-deleted", name));
 
-        // Refresh all players
         try {
             if (plugin instanceof FoliaPerms) {
                 ((FoliaPerms) plugin).refreshAllAttachments();

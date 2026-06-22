@@ -95,8 +95,7 @@ public class GuiListener implements Listener {
     }
 
     /**
-     * Extracts UUID from item lore. Lore is expected to contain "UUID: <uuid>" line.
-     * Returns null if UUID cannot be found or parsed.
+     * Extracts UUID from item lore.
      */
     private UUID extractUuidFromLore(FoliaPerms plugin, ItemMeta meta) {
         List<String> lore = meta.getLore();
@@ -206,8 +205,7 @@ public class GuiListener implements Listener {
 
         // Navigation: Center button (disabled)
         if (slot == GuiConstants.BUTTON_CENTER) {
-            player.sendMessage(ColorConverter.colorize(
-                    "&7[&6FoliaPerms&7] &eClick a group to toggle inheritance."));
+            player.sendMessage(plugin.tl("chat.inheritance.click-hint"));
             return;
         }
 
@@ -240,16 +238,13 @@ public class GuiListener implements Listener {
 
             if (isCurrentlyParent) {
                 service.removeGroupInheritance(groupName, candidateGroup);
-                player.sendMessage(ColorConverter.colorize(
-                        "&7[&6FoliaPerms&7] &aRemoved inheritance: &e" + groupName + " &7\u00AB &e" + candidateGroup));
+                player.sendMessage(plugin.tl("chat.inheritance.removed", groupName, candidateGroup));
             } else {
                 boolean success = service.addGroupInheritance(groupName, candidateGroup);
                 if (!success) {
-                    player.sendMessage(ColorConverter.colorize(
-                            "&7[&6FoliaPerms&7] &cCannot add inheritance: would create a circular dependency."));
+                    player.sendMessage(plugin.tl("chat.inheritance.circular"));
                 } else {
-                    player.sendMessage(ColorConverter.colorize(
-                            "&7[&6FoliaPerms&7] &aAdded inheritance: &e" + groupName + " &7\u00AB &e" + candidateGroup));
+                    player.sendMessage(plugin.tl("chat.inheritance.added", groupName, candidateGroup));
                 }
             }
 
@@ -269,10 +264,10 @@ public class GuiListener implements Listener {
         if (isGroup) {
             if (service.groupHasDirectPermission(targetId, permNode)) {
                 service.removeGroupPermission(targetId, permNode);
-                plugin.getLogger().info("Removed permission '" + permNode + "' from group '" + targetId + "'");
+                plugin.getLogger().info(plugin.tlRaw("console.permission.toggle-perm-removed", permNode, targetId));
             } else {
                 service.addGroupPermission(targetId, permNode);
-                plugin.getLogger().info("Added permission '" + permNode + "' to group '" + targetId + "'");
+                plugin.getLogger().info(plugin.tlRaw("console.permission.toggle-perm-added", permNode, targetId));
             }
         } else {
             UUID uuid;
@@ -284,10 +279,10 @@ public class GuiListener implements Listener {
 
             if (service.userHasDirectPermission(uuid, permNode)) {
                 service.removeUserPermission(uuid, permNode);
-                plugin.getLogger().info("Removed permission '" + permNode + "' from user " + uuid);
+                plugin.getLogger().info(plugin.tlRaw("console.permission.toggle-user-perm-removed", permNode, uuid));
             } else {
                 service.addUserPermission(uuid, permNode);
-                plugin.getLogger().info("Added permission '" + permNode + "' to user " + uuid);
+                plugin.getLogger().info(plugin.tlRaw("console.permission.toggle-user-perm-added", permNode, uuid));
             }
         }
     }

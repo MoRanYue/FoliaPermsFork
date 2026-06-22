@@ -1,5 +1,6 @@
 package kaiakk.foliaPerms.permissions;
 
+import kaiakk.foliaPerms.FoliaPerms;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -27,28 +28,38 @@ public class YamlStorage {
         if (!file.getParentFile().exists()) {
             boolean created = file.getParentFile().mkdirs();
             if (created) {
-                plugin.getLogger().fine("Created data folder: " + file.getParentFile());
+                plugin.getLogger().fine(tlRaw("console.storage.created-folder", file.getParentFile()));
             }
         }
+    }
+
+    /**
+     * Convenience accessor for localized console messages.
+     */
+    private String tlRaw(String key, Object... args) {
+        if (plugin instanceof FoliaPerms) {
+            return ((FoliaPerms) plugin).tlRaw(key, args);
+        }
+        return key;
     }
 
     public Map<UUID, UserData> loadUsers() {
         Map<UUID, UserData> users = new HashMap<>();
         if (!file.exists()) {
-            plugin.getLogger().fine("Permissions file does not exist yet.");
+            plugin.getLogger().fine(tlRaw("console.storage.file-not-exist"));
             return users;
         }
-        
+
         try {
             FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
             if (!cfg.isConfigurationSection("users")) {
-                plugin.getLogger().fine("No users section in permissions.yml");
+                plugin.getLogger().fine(tlRaw("console.storage.no-users"));
                 return users;
             }
-            
+
             var usersSection = cfg.getConfigurationSection("users");
             if (usersSection == null) return users;
-            
+
             for (String key : usersSection.getKeys(false)) {
                 UUID id = null;
                 try {
@@ -60,12 +71,12 @@ public class YamlStorage {
                         if (off != null) id = off.getUniqueId();
                     } catch (Exception ignored) {}
                 }
-                
+
                 if (id == null) {
-                    plugin.getLogger().warning("Could not resolve user key: " + key);
+                    plugin.getLogger().warning(tlRaw("console.storage.cannot-resolve", key));
                     continue;
                 }
-                
+
                 UserData ud = new UserData(id);
                 if (cfg.isList("users." + key + ".permissions")) {
                     for (Object o : cfg.getList("users." + key + ".permissions")) {
@@ -79,25 +90,25 @@ public class YamlStorage {
                 }
                 users.put(id, ud);
             }
-            
-            plugin.getLogger().fine("Loaded " + users.size() + " users from YAML.");
+
+            plugin.getLogger().fine(tlRaw("console.permission.loaded-users", users.size()));
         } catch (Exception e) {
-            plugin.getLogger().warning("Error loading users from YAML: " + e.getMessage());
+            plugin.getLogger().warning(tlRaw("console.storage.error-load", e.getMessage()));
             e.printStackTrace();
         }
-        
+
         return users;
     }
 
     public Map<String, GroupData> loadGroups() {
         Map<String, GroupData> groups = new HashMap<>();
-        
+
         try {
             FileConfiguration cfg = null;
             if (file.exists()) {
                 cfg = YamlConfiguration.loadConfiguration(file);
             }
-            
+
             if (cfg != null && cfg.isConfigurationSection("groups")) {
                 var groupsSection = cfg.getConfigurationSection("groups");
                 if (groupsSection != null) {
@@ -123,20 +134,20 @@ public class YamlStorage {
                     }
                 }
             }
-            
+
             // Ensure the default group always exists
             if (!groups.containsKey(DEFAULT_GROUP_NAME)) {
-                plugin.getLogger().info("Creating default group '" + DEFAULT_GROUP_NAME + "' as it did not exist.");
+                plugin.getLogger().info(tlRaw("console.storage.creating-default", DEFAULT_GROUP_NAME));
                 GroupData defaultGroup = new GroupData(DEFAULT_GROUP_NAME);
                 groups.put(DEFAULT_GROUP_NAME, defaultGroup);
             }
-            
-            plugin.getLogger().fine("Loaded " + groups.size() + " groups from YAML.");
+
+            plugin.getLogger().fine(tlRaw("console.permission.loaded-groups", groups.size()));
         } catch (Exception e) {
-            plugin.getLogger().warning("Error loading groups from YAML: " + e.getMessage());
+            plugin.getLogger().warning(tlRaw("console.storage.error-load", e.getMessage()));
             e.printStackTrace();
         }
-        
+
         return groups;
     }
 
@@ -164,9 +175,9 @@ public class YamlStorage {
             }
 
             cfg.save(file);
-            plugin.getLogger().fine("Saved " + users.size() + " users and " + groups.size() + " groups to YAML.");
+            plugin.getLogger().fine(tlRaw("console.permission.saved-yaml", users.size(), groups.size()));
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to save permissions YAML: " + e.getMessage());
+            plugin.getLogger().severe(tlRaw("console.storage.error-save", e.getMessage()));
             throw e;
         }
     }

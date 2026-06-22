@@ -1,5 +1,7 @@
 package kaiakk.foliaPerms.internal;
 
+import kaiakk.foliaPerms.FoliaPerms;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -25,13 +27,13 @@ public final class UpdateChecker {
     private UpdateChecker() {}
 
     /**
-     * Starts an asynchronous update check. If a newer version is found,
-     * a warning message is printed to the console.
+     * Starts an asynchronous update check.
      *
-     * @param currentVersion the currently installed plugin version (e.g. "0.1.1+26.1.2")
+     * @param currentVersion the currently installed plugin version
      * @param logger         the plugin logger
+     * @param plugin         the FoliaPerms plugin instance (for localization)
      */
-    public static void check(String currentVersion, Logger logger) {
+    public static void check(String currentVersion, Logger logger, FoliaPerms plugin) {
         Thread.startVirtualThread(() -> {
             try {
                 HttpClient client = HttpClient.newBuilder()
@@ -50,16 +52,15 @@ public final class UpdateChecker {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
                 if (response.statusCode() != 200) {
-                    logger.warning("Update check failed: GitHub API returned HTTP " + response.statusCode());
+                    logger.warning(plugin.tlRaw("console.update.failed-http", response.statusCode()));
                     return;
                 }
 
-                // Extract "tag_name" from the JSON response using simple pattern matching.
-                // The JSON structure is: { ..., "tag_name": "vX.Y.Z+...", ... }
+                // Extract "tag_name" from the JSON response
                 Pattern tagPattern = Pattern.compile("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
                 Matcher matcher = tagPattern.matcher(response.body());
                 if (!matcher.find()) {
-                    logger.warning("Update check failed: unable to parse version from GitHub response.");
+                    logger.warning(plugin.tlRaw("console.update.failed-parse"));
                     return;
                 }
 
@@ -67,22 +68,22 @@ public final class UpdateChecker {
                 String latestVersion = latestTag.startsWith("v") ? latestTag.substring(1) : latestTag;
 
                 if (isNewerVersion(latestVersion, currentVersion)) {
-                    printUpdateMessage(logger, latestVersion, latestTag, currentVersion);
+                    printUpdateMessage(logger, latestVersion, latestTag, currentVersion, plugin);
                 }
             } catch (Exception e) {
-                logger.warning("Update check failed: " + e.getMessage());
+                logger.warning(plugin.tlRaw("console.update.failed", e.getMessage()));
             }
         });
     }
 
-    private static void printUpdateMessage(Logger logger, String latestVersion, String latestTag, String currentVersion) {
+    private static void printUpdateMessage(Logger logger, String latestVersion, String latestTag, String currentVersion, FoliaPerms plugin) {
         String border = "*".repeat(55);
         logger.warning(border);
-        logger.warning("*  " + centerText("New version available!", 51) + "  *");
+        logger.warning("*  " + centerText(plugin.tlRaw("console.update.available"), 51) + "  *");
         logger.warning("*" + " ".repeat(53) + "*");
-        logger.warning("*  Latest:   " + padRight(latestVersion, 42) + "  *");
-        logger.warning("*  Current:  " + padRight(currentVersion, 42) + "  *");
-        logger.warning("*  Download: " + padRight(GITHUB_RELEASES_URL + "/tag/" + latestTag, 35) + "  *");
+        logger.warning("*  " + plugin.tlRaw("console.update.latest", padRight(latestVersion, 42)) + "  *");
+        logger.warning("*  " + plugin.tlRaw("console.update.current", padRight(currentVersion, 42)) + "  *");
+        logger.warning("*  " + plugin.tlRaw("console.update.download", padRight(GITHUB_RELEASES_URL + "/tag/" + latestTag, 35)) + "  *");
         logger.warning(border);
     }
 
@@ -100,9 +101,6 @@ public final class UpdateChecker {
 
     /**
      * Compares two version strings in MAJOR.MINOR.PATCH[+API] format.
-     * Only the MAJOR.MINOR.PATCH part before '+' is compared.
-     *
-     * @return true if {@code latest} is strictly newer than {@code current}
      */
     static boolean isNewerVersion(String latest, String current) {
         String[] latestParts = latest.split("\\+")[0].split("\\.");

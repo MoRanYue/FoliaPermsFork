@@ -1,0 +1,263 @@
+# FoliaPerms English (US) locale
+# Version: 0.1.0+26.1.2
+# Use & for color codes (e.g., &a for green, &c for red)
+# Use {0}, {1}, etc. for dynamic placeholders
+
+# ──────────────────────────────────────────
+#  Console Messages
+# ──────────────────────────────────────────
+console:
+  plugin:
+    loading: "Loading all permissions data..."
+    enabled: "FoliaPermsFork v{0} enabled successfully. Welcome to the Folia environment!"
+    disabling: "FoliaPermsFork v{0} disabling..."
+    saving: "Saving permissions..."
+    saved: "Permissions saved."
+    disabled: "FoliaPerms disabled successfully."
+    not-folia-header: "Error detected!"
+    not-folia: "FoliaPerms is a Folia-only plugin!"
+    not-folia-server: "It appears you are running a normal Bukkit/Paper/Spigot server."
+    self-disable: "This plugin will now disable itself, goodbye."
+    disabling-folia: "Disabling FoliaPerms..."
+    folia-detected: "Folia environment detected. FoliaPerms is ready to enable."
+    api-registered: "FoliaPerms API registered with ServicesManager."
+    gathered-perms: "Gathered {0} permissions from plugins."
+    and-more: " ... and {0} more"
+    attachments-initialized: "Permission attachments initialized for {0} players."
+    attachments-cleaned: "All permission attachments cleaned up."
+    error-load-perms: "Failed to load permissions data"
+    error-gather-perms: "Failed to gather registered permissions"
+    locale-loaded: "Loaded locale: {0}.yml"
+    default-group-created: "Created implicit default group '{0}' in memory."
+    locale-file-not-found: "Locale file '{0}' not found. Falling back to 'en_us.yml'."
+    locale-default-missing: "Default locale file 'en_us.yml' not found! Using internal fallback keys."
+
+  permission:
+    added-user: "Added permission '{0}' to user {1}"
+    removed-user: "Removed permission '{0}' from user {1}"
+    added-group: "Added group permission '{0}' to group {1}"
+    removed-group: "Removed permission '{0}' from group {1}"
+    group-created: "Group '{0}' has been created."
+    group-deleted: "Group '{0}' has been deleted. All members re-assigned to default group."
+    user-added-group: "User {0} is now in group '{1}' (single-group mode)."
+    user-removed-group: "Removed user {0} from group '{1}'."
+    user-auto-default: "Auto-assigned user {0} back to default group after removal from '{1}'."
+    user-already-group: "User {0} is already in group '{1}'."
+    user-removed-prev: "Removed user {0} from previous group '{1}'."
+    inheritance-added: "Group '{0}' now inherits from '{1}'."
+    inheritance-removed: "Group '{0}' no longer inherits from '{1}'."
+    inheritance-cycle: "Cannot add inheritance: {0} -> {1} would create a circular dependency."
+    inheritance-self: "Cannot set a group to inherit from itself: {0}"
+    default-group-protected: "Attempted to delete the default group '{0}' - operation blocked."
+    group-not-exist: "Group '{0}' does not exist, cannot delete."
+    user-not-found: "Cannot remove user {0} from group: user not found."
+    user-not-in-group: "User {0} is not in group '{1}'."
+    user-cannot-remove-default: "Cannot remove user {0} from the default group (they must always have a group)."
+    loaded: "Loaded {0} users and {1} groups from permissions.yml"
+    loaded-users: "Loaded {0} users from YAML."
+    loaded-groups: "Loaded {0} groups from YAML."
+    saved-yaml: "Saved {0} users and {1} groups to YAML."
+    refreshed-attachment: "Created/updated the permissions attachment for {0}"
+    recalculated: "Recalculated permissions for {0}"
+    updated-commands: "Updated command tree for {0}"
+    error-refresh: "Failed to refresh attachment for {0}: {1}"
+    attachment-applied: "Applied permission attachment for {0}"
+    attachment-cleaned: "Cleaned up permission attachment for {0}"
+    attachment-error: "Failed to apply permissions to {0}: {1}"
+    attachment-cleanup-error: "Error cleaning up attachment for {0}: {1}"
+    auto-assigned: "Auto-assigned player {0} to the default group."
+    collapsed-user: "Collapsed user {0} to single group: {1}"
+    toggle-perm-added: "Added permission '{0}' to group '{1}'"
+    toggle-perm-removed: "Removed permission '{0}' from group '{1}'"
+    toggle-user-perm-added: "Added permission '{0}' to user {1}"
+    toggle-user-perm-removed: "Removed permission '{0}' from user {1}"
+
+  storage:
+    created-folder: "Created data folder: {0}"
+    file-not-exist: "Permissions file does not exist yet."
+    no-users: "No users section in permissions.yml"
+    cannot-resolve: "Could not resolve user key: {0}"
+    error-load: "Error loading from YAML: {0}"
+    error-save: "Failed to save permissions YAML: {0}"
+    creating-default: "Creating default group '{0}' as it did not exist."
+    async-save-success: "Async save completed successfully."
+    async-save-failed: "Async save failed: {0}"
+    scheduling-async: "Scheduling async permissions save."
+
+  update:
+    failed-http: "Update check failed: GitHub API returned HTTP {0}"
+    failed-parse: "Update check failed: unable to parse version from GitHub response."
+    failed: "Update check failed: {0}"
+    available: "New version available!"
+    latest: "Latest:   {0}"
+    current: "Current:  {0}"
+    download: "Download: {0}"
+
+  plugin-enable:
+    plugin-enabled: "Plugin enabled: {0} - gathering permissions and refreshing attachments."
+
+  player:
+    uuids-loaded: "Loaded user UUIDs: {0}"
+    groups-loaded: "Loaded groups: {0}"
+
+# ──────────────────────────────────────────
+#  Player Chat Messages
+# ──────────────────────────────────────────
+chat:
+  help:
+    header: "&e===== FoliaPerms Commands ====="
+    editor: "&e/fperm editor &7- Open the permission editor GUI"
+    reload: "&e/fperm reload &7- Reload permissions from file"
+    gather: "&e/fperm gather &7- Gather permissions from all plugins"
+    refresh: "&e/fperm refresh &7- Refresh all permission attachments"
+    user-header: "&e--- User Commands ---"
+    user-addperm: "&e/fperm user addperm <player> <perm>"
+    user-removeperm: "&e/fperm user removeperm <player> <perm>"
+    user-addgroup: "&e/fperm user addgroup <player> <group>"
+    user-removegroup: "&e/fperm user removegroup <player> <group>"
+    group-header: "&e--- Group Commands ---"
+    group-create: "&e/fperm group create <name>"
+    group-delete: "&e/fperm group delete <name>"
+    group-addperm: "&e/fperm group addperm <name> <perm>"
+    group-adduser: "&e/fperm group adduser <name> <player>"
+    group-removeuser: "&e/fperm group removeuser <name> <player>"
+    inheritance-header: "&e--- Inheritance Commands ---"
+    inheritance-set: "&e/fperm group setinherit <group> <parent> &7- Make group inherit from parent"
+    inheritance-remove: "&e/fperm group removeinherit <group> <parent> &7- Remove inheritance"
+    inheritance-show: "&e/fperm group inheritance <group> &7- Show inheritance chain"
+    inheritance-perms: "&e/fperm group perms <group> &7- Show all effective permissions (incl. inherited)"
+    other-header: "&e--- Other Commands ---"
+    check: "&e/fperm check <player> <perm>"
+    listperms: "&e/fperm listperms <player>"
+
+  error:
+    no-permission: "&cYou don't have permission to use this command."
+    internal-error: "&cInternal error while executing command."
+    internal-error-user: "&cInternal error while processing user command."
+    internal-error-group: "&cInternal error while processing group command."
+    internal-error-list: "&cInternal error while listing permissions."
+    service-unavailable: "&cInternal error: permission service unavailable."
+    editor-only-player: "&cThe editor can only be opened by a player in-game."
+    player-not-found: "&cCould not resolve player: {0}"
+    uuid-not-found: "&cCould not determine UUID for player: {0}"
+    group-not-found: "&cGroup not found: {0}"
+    default-group-delete: "&cThe default group cannot be deleted."
+    group-delete-failed: "&cCould not delete group '{0}'. It may not exist or is protected."
+    inheritance-failed: "&cFailed to set inheritance. Check for circular dependencies."
+    unknown-user-action: "&cUnknown user action: {0}"
+    unknown-group-action: "&cUnknown group action: {0}"
+    unknown-subcommand: "&eUnknown subcommand. Use /fperm help"
+    gather-failed: "&cFailed to gather permissions: {0}"
+    refresh-failed: "&cFailed to refresh attachments: {0}"
+
+  success:
+    permission-added: "&aAdded permission {0} to {1}"
+    permission-removed: "&aRemoved permission {0} from {1}"
+    user-added-group: "&aAdded {0} to group {1}"
+    user-removed-group: "&aRemoved {0} from group {1}"
+    group-created: "&aGroup created: {0}"
+    group-deleted: "&aGroup '{0}' deleted. Members re-assigned to default group."
+    permission-added-group: "&aAdded permission {0} to group {1}"
+    inheritance-set: "&aGroup '{0}' now inherits from '{1}'."
+    inheritance-removed: "&aGroup '{0}' no longer inherits from '{1}'."
+    reloaded: "&aPermissions reloaded."
+    refreshed: "&aRefreshed permission attachments."
+    gathered: "&aGathered {0} permissions from plugins."
+
+  info:
+    welcome: "&eFoliaPerms active!"
+    usage: "&eUsage: {0}"
+    default-msg: "&eFoliaPerms: simple permission manager. /fperm help"
+    check-has: "{0} &aHAS {1}"
+    check-not: "{0} &cDOES NOT HAVE {1}"
+    listperms-header: "&ePermissions for {0}:"
+    listperms-none: "&e{0} has no registered permissions (or none gathered)."
+    listperms-entry: " - {0}"
+    inheritance-header: "&eInheritance chain for '{0}':"
+    inheritance-none: " &7- (no inheritance)"
+    inheritance-entry: " &7- {0}"
+    inheritance-direct: "&eDirect parents: {0}"
+    perms-header: "&ePermissions for group '{0}':"
+    perms-direct-header: " &bDirect permissions:"
+    perms-direct-none: " &7- (no direct permissions)"
+    perms-entry: " &7- {0}"
+    perms-inherited-header: " &bInherited permissions (from parents):"
+
+  inheritance:
+    click-hint: "&7[&6FoliaPerms&7] &eClick a group to toggle inheritance."
+    added: "&7[&6FoliaPerms&7] &aAdded inheritance: &e{0} &7\u00AB &e{1}"
+    removed: "&7[&6FoliaPerms&7] &aRemoved inheritance: &e{0} &7\u00AB &e{1}"
+    circular: "&7[&6FoliaPerms&7] &cCannot add inheritance: would create a circular dependency."
+
+# ──────────────────────────────────────────
+#  GUI Container Text
+# ──────────────────────────────────────────
+gui:
+  main:
+    title: "&8FoliaPerms Editor"
+    groups:
+      name: "&aEdit Groups"
+      lore: "&7Browse and toggle permissions for groups."
+    players:
+      name: "&bEdit Players"
+      lore: "&7Browse online players and toggle their permissions."
+
+  target-list:
+    groups-title: "&8Groups"
+    players-title: "&8Online Players"
+    back:
+      name: "&cBack"
+      lore: "&7Return to main menu."
+    group:
+      lore-edit: "&7Click to edit permissions & inheritance."
+      lore-inherits: "&7Inherits: {0}"
+      lore-no-inheritance: "&7No inheritance set"
+    player:
+      lore-edit: "&7Click to edit permissions."
+      lore-uuid: "&8UUID: {0}"
+
+  permission-editor:
+    title: "&8Perms \u00BB {0}"
+    granted: "&aGRANTED  \u2714  click to remove"
+    not-granted: "&cNOT GRANTED  \u2718  click to add"
+    previous:
+      name: "&ePrevious Page"
+      lore: "&7Go to page {0}."
+    page:
+      name: "&fPage {0} &7/ {1}"
+      lore: "&7{0} total permissions registered."
+    back:
+      name: "&cBack"
+      lore: "&7Return to target list."
+    next:
+      name: "&eNext Page"
+      lore: "&7Go to page {0}."
+    inheritance:
+      name: "&6Inheritance"
+      lore-current: "&7Currently inherits: {0}"
+      lore-none: "&7No inheritance configured"
+      lore-click: "&eClick to manage parent groups."
+
+  inheritance-editor:
+    title: "&8Inheritance \u00BB {0}"
+    parent: "&aPARENT  \u2714  click to remove"
+    not-parent: "&cNOT PARENT  \u2718  click to add"
+    previous:
+      name: "&ePrevious Page"
+      lore: "&7Go to page {0}."
+    page:
+      name: "&fPage {0} &7/ {1}"
+      lore-1: "&7Click groups to toggle inheritance."
+      lore-2: "&8Current parents: {0}"
+    back:
+      name: "&cBack"
+      lore: "&7Return to permission editor."
+    next:
+      name: "&eNext Page"
+      lore: "&7Go to page {0}."
+
+# ──────────────────────────────────────────
+#  Error Messages
+# ──────────────────────────────────────────
+error:
+  prefix: "[FoliaPerms] "

@@ -1,0 +1,7 @@
+# FoliaPerms main configuration file
+# Language setting: specify the filename in the locales directory (without extension)
+# e.g.: en_us, zh_cn
+language: en_us
+
+# Check for updates on GitHub on startup
+check-updates: true

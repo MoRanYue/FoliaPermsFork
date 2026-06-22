@@ -174,7 +174,24 @@ if (api != null) {
 
 ## Configuration
 
-All data is stored in `plugins/FoliaPerms/permissions.yml`. The file is automatically created on first run and includes the `default` group.
+### Main Configuration (`config.yml`)
+
+The main configuration file `plugins/FoliaPerms/config.yml` is automatically created on first run.
+
+```yaml
+# FoliaPerms Main Configuration
+#
+# Language Setting
+# Set the filename in the locales directory (without extension)
+# e.g.: en_us, zh_cn
+language: en_us
+```
+
+- **`language`**: Specifies which locale file to use from the `plugins/FoliaPerms/locales/` directory. Default is `en_us`. To switch to Simplified Chinese, set it to `zh_cn`.
+
+### Permission Data (`permissions.yml`)
+
+All permission data is stored in `plugins/FoliaPerms/permissions.yml`. The file is automatically created on first run and includes the `default` group.
 
 ### Example `permissions.yml`
 

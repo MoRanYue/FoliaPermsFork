@@ -16,7 +16,7 @@ public class PluginEnableListener implements Listener {
     public void onPluginEnable(PluginEnableEvent event) {
         try {
             String name = event.getPlugin() == null ? "unknown" : event.getPlugin().getName();
-            plugin.getLogger().info("Plugin enabled: " + name + " — gathering permissions and refreshing attachments.");
+            plugin.getLogger().info(plugin.tlRaw("console.plugin-enable.plugin-enabled", name));
             if (plugin.getPermissionService() != null) {
                 plugin.getPermissionService().gatherRegisteredPermissions(plugin);
                 plugin.refreshAllAttachments();

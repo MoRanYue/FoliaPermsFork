@@ -1,0 +1,263 @@
+# FoliaPerms 简体中文语言文件
+# 版本: 0.1.0+26.1.2
+# 使用 & 前缀的颜色代码（例如 &a 绿色、&c 红色）
+# 使用 {0}、{1} 等作为动态占位符
+
+# ──────────────────────────────────────────
+#  控制台消息
+# ──────────────────────────────────────────
+console:
+  plugin:
+    loading: "正在加载所有权限数据..."
+    enabled: "FoliaPermsFork v{0} 已成功启用。欢迎来到 Folia 环境！"
+    disabling: "FoliaPermsFork v{0} 正在禁用..."
+    saving: "正在保存权限..."
+    saved: "权限已保存。"
+    disabled: "FoliaPerms 已成功禁用。"
+    not-folia-header: "检测到错误！"
+    not-folia: "FoliaPerms 是仅限 Folia 的插件！"
+    not-folia-server: "您似乎正在运行普通的 Bukkit/Paper/Spigot 服务器。"
+    self-disable: "此插件将自行禁用，再见。"
+    disabling-folia: "正在禁用 FoliaPerms..."
+    folia-detected: "已检测到 Folia 环境。FoliaPerms 准备启用。"
+    api-registered: "FoliaPerms API 已注册到 ServicesManager。"
+    gathered-perms: "已从插件中收集了 {0} 个权限。"
+    and-more: " ... 以及另外 {0} 个"
+    attachments-initialized: "已为 {0} 名玩家初始化权限附加。"
+    attachments-cleaned: "所有权限附加已清理。"
+    error-load-perms: "加载权限数据失败"
+    error-gather-perms: "收集已注册权限失败"
+    locale-loaded: "已加载语言包: {0}.yml"
+    default-group-created: "已在内存中创建隐式默认组 '{0}'。"
+    locale-file-not-found: "语言文件 '{0}' 未找到，回退到 'en_us.yml'。"
+    locale-default-missing: "默认语言文件 'en_us.yml' 未找到！使用内部回退键值。"
+
+  permission:
+    added-user: "已向用户 {1} 添加权限 '{0}'"
+    removed-user: "已从用户 {1} 移除权限 '{0}'"
+    added-group: "已向组 {1} 添加组权限 '{0}'"
+    removed-group: "已从组 {1} 移除权限 '{0}'"
+    group-created: "组 '{0}' 已创建。"
+    group-deleted: "组 '{0}' 已删除。所有成员已重新分配到默认组。"
+    user-added-group: "用户 {0} 现在属于组 '{1}'（单组模式）。"
+    user-removed-group: "已从组 '{1}' 中移除用户 {0}"
+    user-auto-default: "从组 '{1}' 移除后，用户 {0} 已自动重新分配到默认组。"
+    user-already-group: "用户 {0} 已经在组 '{1}' 中。"
+    user-removed-prev: "已将用户 {0} 从之前的组 '{1}' 中移除。"
+    inheritance-added: "组 '{0}' 现在继承自 '{1}'。"
+    inheritance-removed: "组 '{0}' 不再继承自 '{1}'。"
+    inheritance-cycle: "无法添加继承: {0} -> {1} 将产生循环依赖。"
+    inheritance-self: "不能设置组继承自身: {0}"
+    default-group-protected: "试图删除默认组 '{0}' - 操作已被阻止。"
+    group-not-exist: "组 '{0}' 不存在，无法删除。"
+    user-not-found: "无法从组中移除用户 {0}: 用户未找到。"
+    user-not-in-group: "用户 {0} 不在组 '{1}' 中。"
+    user-cannot-remove-default: "不能将用户 {0} 从默认组移除（用户必须始终属于某个组）。"
+    loaded: "已从 permissions.yml 加载 {0} 名用户和 {1} 个组"
+    loaded-users: "已从 YAML 加载 {0} 名用户。"
+    loaded-groups: "已从 YAML 加载 {0} 个组。"
+    saved-yaml: "已将 {0} 名用户和 {1} 个组保存到 YAML。"
+    refreshed-attachment: "已创建/更新 {0} 的权限附加"
+    recalculated: "已重新计算 {0} 的权限"
+    updated-commands: "已更新 {0} 的命令树"
+    error-refresh: "刷新 {0} 的权限附加失败: {1}"
+    attachment-applied: "已应用 {0} 的权限附加"
+    attachment-cleaned: "已清理 {0} 的权限附加"
+    attachment-error: "无法应用 {0} 的权限: {1}"
+    attachment-cleanup-error: "清理 {0} 的权限附加时出错: {1}"
+    auto-assigned: "已将玩家 {0} 自动分配到默认组。"
+    collapsed-user: "已将用户 {0} 折叠为单个组: {1}"
+    toggle-perm-added: "已向组 '{1}' 添加权限 '{0}'"
+    toggle-perm-removed: "已从组 '{1}' 移除权限 '{0}'"
+    toggle-user-perm-added: "已向用户 {1} 添加权限 '{0}'"
+    toggle-user-perm-removed: "已从用户 {1} 移除权限 '{0}'"
+
+  storage:
+    created-folder: "已创建数据文件夹: {0}"
+    file-not-exist: "权限文件尚不存在。"
+    no-users: "permissions.yml 中没有 users 部分"
+    cannot-resolve: "无法解析用户键: {0}"
+    error-load: "从 YAML 加载时出错: {0}"
+    error-save: "保存权限 YAML 失败: {0}"
+    creating-default: "正在创建默认组 '{0}'，因为它不存在。"
+    async-save-success: "异步保存成功完成。"
+    async-save-failed: "异步保存失败: {0}"
+    scheduling-async: "正在调度异步权限保存。"
+
+  update:
+    failed-http: "更新检查失败: GitHub API 返回 HTTP {0}"
+    failed-parse: "更新检查失败: 无法从 GitHub 响应中解析版本。"
+    failed: "更新检查失败: {0}"
+    available: "新版本可用！"
+    latest: "最新版本: {0}"
+    current: "当前版本: {0}"
+    download: "下载地址: {0}"
+
+  plugin-enable:
+    plugin-enabled: "插件已启用: {0} - 正在收集权限并刷新权限附加。"
+
+  player:
+    uuids-loaded: "已加载的用户 UUID: {0}"
+    groups-loaded: "已加载的组: {0}"
+
+# ──────────────────────────────────────────
+#  玩家聊天消息
+# ──────────────────────────────────────────
+chat:
+  help:
+    header: "&e===== FoliaPerms 命令帮助 ====="
+    editor: "&e/fperm editor &7- 打开权限编辑器 GUI"
+    reload: "&e/fperm reload &7- 从文件重新加载权限"
+    gather: "&e/fperm gather &7- 从所有插件收集权限"
+    refresh: "&e/fperm refresh &7- 刷新所有权限附加"
+    user-header: "&e--- 用户命令 ---"
+    user-addperm: "&e/fperm user addperm <玩家名> <权限节点>"
+    user-removeperm: "&e/fperm user removeperm <玩家名> <权限节点>"
+    user-addgroup: "&e/fperm user addgroup <玩家名> <组名>"
+    user-removegroup: "&e/fperm user removegroup <玩家名> <组名>"
+    group-header: "&e--- 组命令 ---"
+    group-create: "&e/fperm group create <组名>"
+    group-delete: "&e/fperm group delete <组名>"
+    group-addperm: "&e/fperm group addperm <组名> <权限节点>"
+    group-adduser: "&e/fperm group adduser <组名> <玩家名>"
+    group-removeuser: "&e/fperm group removeuser <组名> <玩家名>"
+    inheritance-header: "&e--- 继承命令 ---"
+    inheritance-set: "&e/fperm group setinherit <组名> <父组名> &7- 设置组继承自父组"
+    inheritance-remove: "&e/fperm group removeinherit <组名> <父组名> &7- 移除继承关系"
+    inheritance-show: "&e/fperm group inheritance <组名> &7- 显示继承链"
+    inheritance-perms: "&e/fperm group perms <组名> &7- 显示所有有效权限（含继承）"
+    other-header: "&e--- 其他命令 ---"
+    check: "&e/fperm check <玩家名> <权限节点>"
+    listperms: "&e/fperm listperms <玩家名>"
+
+  error:
+    no-permission: "&c您没有使用此命令的权限。"
+    internal-error: "&c执行命令时发生内部错误。"
+    internal-error-user: "&c处理用户命令时发生内部错误。"
+    internal-error-group: "&c处理组命令时发生内部错误。"
+    internal-error-list: "&c列出权限时发生内部错误。"
+    service-unavailable: "&c内部错误: 权限服务不可用。"
+    editor-only-player: "&c编辑器只能在游戏内由玩家打开。"
+    player-not-found: "&c无法解析玩家: {0}"
+    uuid-not-found: "&c无法确定玩家 {0} 的 UUID"
+    group-not-found: "&c未找到组: {0}"
+    default-group-delete: "&c默认组不能被删除。"
+    group-delete-failed: "&c无法删除组 '{0}'。它可能不存在或受保护。"
+    inheritance-failed: "&c设置继承失败。请检查是否存在循环依赖。"
+    unknown-user-action: "&c未知的用户操作: {0}"
+    unknown-group-action: "&c未知的组操作: {0}"
+    unknown-subcommand: "&e未知的子命令。使用 /fperm help"
+    gather-failed: "&c收集权限失败: {0}"
+    refresh-failed: "&c刷新权限附加失败: {0}"
+
+  success:
+    permission-added: "&a已向 {1} 添加权限 {0}"
+    permission-removed: "&a已从 {1} 移除权限 {0}"
+    user-added-group: "&a已将 {0} 添加到组 {1}"
+    user-removed-group: "&a已将 {0} 从组 {1} 移除"
+    group-created: "&a组已创建: {0}"
+    group-deleted: "&a组 '{0}' 已删除。成员已重新分配到默认组。"
+    permission-added-group: "&a已向组 {1} 添加权限 {0}"
+    inheritance-set: "&a组 '{0}' 现在继承自 '{1}'。"
+    inheritance-removed: "&a组 '{0}' 不再继承自 '{1}'。"
+    reloaded: "&a权限已重新加载。"
+    refreshed: "&a权限附加已刷新。"
+    gathered: "&a已从插件收集了 {0} 个权限。"
+
+  info:
+    welcome: "&eFoliaPerms 已激活！"
+    usage: "&e用法: {0}"
+    default-msg: "&eFoliaPerms: 简单权限管理器。使用 /fperm help"
+    check-has: "{0} &a拥有 {1}"
+    check-not: "{0} &c没有 {1}"
+    listperms-header: "&e{0} 的权限列表:"
+    listperms-none: "&e{0} 没有已注册的权限（或未收集）。"
+    listperms-entry: " - {0}"
+    inheritance-header: "&e'{0}' 的继承链:"
+    inheritance-none: " &7- (无继承)"
+    inheritance-entry: " &7- {0}"
+    inheritance-direct: "&e直接父组: {0}"
+    perms-header: "&e组 '{0}' 的权限:"
+    perms-direct-header: " &b直接权限:"
+    perms-direct-none: " &7- (无直接权限)"
+    perms-entry: " &7- {0}"
+    perms-inherited-header: " &b继承的权限（来自父组）:"
+
+  inheritance:
+    click-hint: "&7[&6FoliaPerms&7] &e点击一个组来切换继承。"
+    added: "&7[&6FoliaPerms&7] &a已添加继承: &e{0} &7\u00AB &e{1}"
+    removed: "&7[&6FoliaPerms&7] &a已移除继承: &e{0} &7\u00AB &e{1}"
+    circular: "&7[&6FoliaPerms&7] &c无法添加继承: 将产生循环依赖。"
+
+# ──────────────────────────────────────────
+#  GUI 容器文本
+# ──────────────────────────────────────────
+gui:
+  main:
+    title: "&8FoliaPerms 编辑器"
+    groups:
+      name: "&a编辑组"
+      lore: "&7浏览和切换组的权限。"
+    players:
+      name: "&b编辑玩家"
+      lore: "&7浏览在线玩家并切换他们的权限。"
+
+  target-list:
+    groups-title: "&8组列表"
+    players-title: "&8在线玩家"
+    back:
+      name: "&c返回"
+      lore: "&7返回主菜单。"
+    group:
+      lore-edit: "&7点击编辑权限和继承。"
+      lore-inherits: "&7继承自: {0}"
+      lore-no-inheritance: "&7未设置继承"
+    player:
+      lore-edit: "&7点击编辑权限。"
+      lore-uuid: "&8UUID: {0}"
+
+  permission-editor:
+    title: "&8权限 \u00BB {0}"
+    granted: "&a已授予  \u2714  点击移除"
+    not-granted: "&c未授予  \u2718  点击添加"
+    previous:
+      name: "&e上一页"
+      lore: "&7前往第 {0} 页。"
+    page:
+      name: "&f第 {0} 页 &7/ 共 {1} 页"
+      lore: "&7共 {0} 个已注册权限。"
+    back:
+      name: "&c返回"
+      lore: "&7返回到目标列表。"
+    next:
+      name: "&e下一页"
+      lore: "&7前往第 {0} 页。"
+    inheritance:
+      name: "&6继承管理"
+      lore-current: "&7当前继承自: {0}"
+      lore-none: "&7未配置继承"
+      lore-click: "&e点击管理父组。"
+
+  inheritance-editor:
+    title: "&8继承 \u00BB {0}"
+    parent: "&a父组  \u2714  点击移除"
+    not-parent: "&c非父组  \u2718  点击添加"
+    previous:
+      name: "&e上一页"
+      lore: "&7前往第 {0} 页。"
+    page:
+      name: "&f第 {0} 页 &7/ 共 {1} 页"
+      lore-1: "&7点击组来切换继承。"
+      lore-2: "&8当前父组: {0}"
+    back:
+      name: "&c返回"
+      lore: "&7返回到权限编辑器。"
+    next:
+      name: "&e下一页"
+      lore: "&7前往第 {0} 页。"
+
+# ──────────────────────────────────────────
+#  错误消息
+# ──────────────────────────────────────────
+error:
+  prefix: "[FoliaPerms] "

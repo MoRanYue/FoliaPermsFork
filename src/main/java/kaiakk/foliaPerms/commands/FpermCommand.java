@@ -30,12 +30,12 @@ public class FpermCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof org.bukkit.command.ConsoleCommandSender) && !sender.hasPermission("folia.perms")) {
-            send(sender, ColorConverter.colorize("&cYou don't have permission to use this command."));
+            send(sender, plugin.tl("chat.error.no-permission"));
             return true;
         }
 
         if (args.length == 0) {
-            send(sender, ColorConverter.colorize("&eFoliaPerms: simple permission manager. /fperm help"));
+            send(sender, plugin.tl("chat.info.default-msg"));
             return true;
         }
 
@@ -43,40 +43,41 @@ public class FpermCommand implements CommandExecutor {
 
         if (service == null) {
             plugin.getLogger().severe("PermissionService is not initialized; command disabled.");
-            send(sender, ColorConverter.colorize("&cInternal error: permission service unavailable."));
+            send(sender, plugin.tl("chat.error.service-unavailable"));
             return true;
         }
 
         try {
             switch (sub) {
                 case "help":
-                    send(sender, ColorConverter.colorize("&e===== FoliaPerms Commands ====="));
-                    send(sender, ColorConverter.colorize("&e/fperm editor &7- Open the permission editor GUI"));
-                    send(sender, ColorConverter.colorize("&e/fperm reload &7- Reload permissions from file"));
-                    send(sender, ColorConverter.colorize("&e/fperm gather &7- Gather permissions from all plugins"));
-                    send(sender, ColorConverter.colorize("&e/fperm refresh &7- Refresh all permission attachments"));
-                    send(sender, ColorConverter.colorize("&e--- User Commands ---"));
-                    send(sender, ColorConverter.colorize("&e/fperm user addperm <player> <perm>"));
-                    send(sender, ColorConverter.colorize("&e/fperm user removeperm <player> <perm>"));
-                    send(sender, ColorConverter.colorize("&e/fperm user addgroup <player> <group>"));
-                    send(sender, ColorConverter.colorize("&e/fperm user removegroup <player> <group>"));
-                    send(sender, ColorConverter.colorize("&e--- Group Commands ---"));
-                    send(sender, ColorConverter.colorize("&e/fperm group create <name>"));
-                    send(sender, ColorConverter.colorize("&e/fperm group addperm <name> <perm>"));
-                    send(sender, ColorConverter.colorize("&e/fperm group adduser <name> <player>"));
-                    send(sender, ColorConverter.colorize("&e/fperm group removeuser <name> <player>"));
-                    send(sender, ColorConverter.colorize("&e--- Inheritance Commands ---"));
-                    send(sender, ColorConverter.colorize("&e/fperm group setinherit <group> <parent> &7- Make group inherit from parent"));
-                    send(sender, ColorConverter.colorize("&e/fperm group removeinherit <group> <parent> &7- Remove inheritance"));
-                    send(sender, ColorConverter.colorize("&e/fperm group inheritance <group> &7- Show inheritance chain"));
-                    send(sender, ColorConverter.colorize("&e/fperm group perms <group> &7- Show all effective permissions (incl. inherited)"));
-                    send(sender, ColorConverter.colorize("&e--- Other Commands ---"));
-                    send(sender, ColorConverter.colorize("&e/fperm check <player> <perm>"));
-                    send(sender, ColorConverter.colorize("&e/fperm listperms <player>"));
+                    send(sender, plugin.tl("chat.help.header"));
+                    send(sender, plugin.tl("chat.help.editor"));
+                    send(sender, plugin.tl("chat.help.reload"));
+                    send(sender, plugin.tl("chat.help.gather"));
+                    send(sender, plugin.tl("chat.help.refresh"));
+                    send(sender, plugin.tl("chat.help.user-header"));
+                    send(sender, plugin.tl("chat.help.user-addperm"));
+                    send(sender, plugin.tl("chat.help.user-removeperm"));
+                    send(sender, plugin.tl("chat.help.user-addgroup"));
+                    send(sender, plugin.tl("chat.help.user-removegroup"));
+                    send(sender, plugin.tl("chat.help.group-header"));
+                    send(sender, plugin.tl("chat.help.group-create"));
+                    send(sender, plugin.tl("chat.help.group-delete"));
+                    send(sender, plugin.tl("chat.help.group-addperm"));
+                    send(sender, plugin.tl("chat.help.group-adduser"));
+                    send(sender, plugin.tl("chat.help.group-removeuser"));
+                    send(sender, plugin.tl("chat.help.inheritance-header"));
+                    send(sender, plugin.tl("chat.help.inheritance-set"));
+                    send(sender, plugin.tl("chat.help.inheritance-remove"));
+                    send(sender, plugin.tl("chat.help.inheritance-show"));
+                    send(sender, plugin.tl("chat.help.inheritance-perms"));
+                    send(sender, plugin.tl("chat.help.other-header"));
+                    send(sender, plugin.tl("chat.help.check"));
+                    send(sender, plugin.tl("chat.help.listperms"));
                     break;
                 case "editor":
                     if (!(sender instanceof org.bukkit.entity.Player)) {
-                        send(sender, ColorConverter.colorize("&cThe editor can only be opened by a player in-game."));
+                        send(sender, plugin.tl("chat.error.editor-only-player"));
                         break;
                     }
                     kaiakk.foliaPerms.gui.EditorGui.openMain((org.bukkit.entity.Player) sender, plugin);
@@ -86,37 +87,42 @@ public class FpermCommand implements CommandExecutor {
                         service.gatherRegisteredPermissions(plugin);
                         plugin.refreshAllAttachments();
                         int count = service.getRegisteredPermissions().size();
-                        send(sender, ColorConverter.colorize("&aGathered " + count + " permissions from plugins."));
+                        send(sender, plugin.tl("chat.success.gathered", count));
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to run /fperm gather: " + e.getMessage());
-                        send(sender, ColorConverter.colorize("&cFailed to gather permissions: " + e.getMessage()));
+                        send(sender, plugin.tl("chat.error.gather-failed", e.getMessage()));
                     }
                     break;
                 case "reload":
+                    // Reload config and locale
+                    plugin.reloadConfig();
+                    String language = plugin.getConfig().getString("language", "en_us");
+                    plugin.getLocaleManager().load(language);
+                    // Reload permissions
                     service.load();
-                    send(sender, ColorConverter.colorize("&aPermissions reloaded."));
+                    send(sender, plugin.tl("chat.success.reloaded"));
                     break;
                 case "refresh":
                     try {
                         plugin.refreshAllAttachments();
-                        send(sender, ColorConverter.colorize("&aRefreshed permission attachments."));
+                        send(sender, plugin.tl("chat.success.refreshed"));
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to refresh attachments: " + e.getMessage());
-                        send(sender, ColorConverter.colorize("&cFailed to refresh attachments: " + e.getMessage()));
+                        send(sender, plugin.tl("chat.error.refresh-failed", e.getMessage()));
                     }
                     break;
                 case "user":
                     if (args.length < 4) {
-                        send(sender, ColorConverter.colorize("&eUsage: /fperm user addperm|removeperm|addgroup|removegroup <player> <perm|group>"));
+                        send(sender, plugin.tl("chat.info.usage", "/fperm user addperm|removeperm|addgroup|removegroup <player> <perm|group>"));
                         break;
                     }
                     String action = args[1].toLowerCase();
                     String playerName = args[2];
-                    String perm = args[3];
+                    String permArg = args[3];
                     try {
                         var op = Bukkit.getOfflinePlayer(playerName);
                         if (op == null) {
-                            send(sender, ColorConverter.colorize("&cCould not resolve player: " + playerName));
+                            send(sender, plugin.tl("chat.error.player-not-found", playerName));
                             break;
                         }
                         var id = op.getUniqueId();
@@ -125,183 +131,183 @@ public class FpermCommand implements CommandExecutor {
                             if (online != null) id = online.getUniqueId();
                         }
                         if (id == null) {
-                            send(sender, ColorConverter.colorize("&cCould not determine UUID for player: " + playerName));
+                            send(sender, plugin.tl("chat.error.uuid-not-found", playerName));
                             break;
                         }
 
                         if (action.equals("addperm")) {
-                            service.addUserPermission(id, perm);
+                            service.addUserPermission(id, permArg);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aAdded permission " + perm + " to " + playerName));
+                            send(sender, plugin.tl("chat.success.permission-added", permArg, playerName));
                         } else if (action.equals("removeperm")) {
-                            service.removeUserPermission(id, perm);
+                            service.removeUserPermission(id, permArg);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aRemoved permission " + perm + " from " + playerName));
+                            send(sender, plugin.tl("chat.success.permission-removed", permArg, playerName));
                         } else if (action.equals("addgroup")) {
-                            service.addUserToGroup(id, perm);
+                            service.addUserToGroup(id, permArg);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aAdded " + playerName + " to group " + perm));
+                            send(sender, plugin.tl("chat.success.user-added-group", playerName, permArg));
                         } else if (action.equals("removegroup")) {
-                            service.removeUserFromGroup(id, perm);
+                            service.removeUserFromGroup(id, permArg);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aRemoved " + playerName + " from group " + perm));
+                            send(sender, plugin.tl("chat.success.user-removed-group", playerName, permArg));
                         } else {
-                            send(sender, ColorConverter.colorize("&cUnknown user action: " + action));
+                            send(sender, plugin.tl("chat.error.unknown-user-action", action));
                         }
                     } catch (Exception e) {
                         kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Exception handling /fperm user", e);
-                        send(sender, ColorConverter.colorize("&cInternal error while processing user command."));
+                        send(sender, plugin.tl("chat.error.internal-error-user"));
                     }
                     break;
                 case "group":
                     if (args.length < 2) {
-                        send(sender, ColorConverter.colorize("&eUsage: /fperm group create|delete|addperm|adduser|removeuser|setinherit|removeinherit|inheritance|perms <args>"));
+                        send(sender, plugin.tl("chat.info.usage", "/fperm group create|delete|addperm|adduser|removeuser|setinherit|removeinherit|inheritance|perms <args>"));
                         break;
                     }
                     try {
                         String gaction = args[1].toLowerCase();
                         if (gaction.equals("create")) {
-                            if (args.length < 3) { send(sender, ColorConverter.colorize("Usage: /fperm group create <name>")); break; }
+                            if (args.length < 3) { send(sender, plugin.tl("chat.info.usage", "/fperm group create <name>")); break; }
                             service.createGroup(args[2]);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aGroup created: " + args[2]));
+                            send(sender, plugin.tl("chat.success.group-created", args[2]));
                         } else if (gaction.equals("addperm")) {
-                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group addperm <name> <perm>")); break; }
+                            if (args.length < 4) { send(sender, plugin.tl("chat.info.usage", "/fperm group addperm <name> <perm>")); break; }
                             service.addGroupPermission(args[2], args[3]);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aAdded permission " + args[3] + " to group " + args[2]));
+                            send(sender, plugin.tl("chat.success.permission-added-group", args[3], args[2]));
                         } else if (gaction.equals("adduser")) {
-                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group adduser <name> <player>")); break; }
+                            if (args.length < 4) { send(sender, plugin.tl("chat.info.usage", "/fperm group adduser <name> <player>")); break; }
                             String gname = args[2];
                             var target = Bukkit.getOfflinePlayer(args[3]);
                             if (target == null || target.getUniqueId() == null) {
-                                send(sender, ColorConverter.colorize("&cCould not resolve player: " + args[3]));
+                                send(sender, plugin.tl("chat.error.player-not-found", args[3]));
                                 break;
                             }
                             service.addUserToGroup(target.getUniqueId(), gname);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aAdded " + args[3] + " to group " + gname));
+                            send(sender, plugin.tl("chat.success.user-added-group", args[3], gname));
                         } else if (gaction.equals("delete")) {
-                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group delete <name>")); break; }
+                            if (args.length < 3) { send(sender, plugin.tl("chat.info.usage", "/fperm group delete <name>")); break; }
                             String gdel = args[2];
                             if (gdel.equalsIgnoreCase("default")) {
-                                send(sender, ColorConverter.colorize("&cThe default group cannot be deleted."));
+                                send(sender, plugin.tl("chat.error.default-group-delete"));
                                 break;
                             }
                             boolean deleted = service.deleteGroup(gdel);
                             if (deleted) {
                                 plugin.getPermissionService().saveAsync();
-                                send(sender, ColorConverter.colorize("&aGroup '" + gdel + "' deleted. Members re-assigned to default group."));
+                                send(sender, plugin.tl("chat.success.group-deleted", gdel));
                             } else {
-                                send(sender, ColorConverter.colorize("&cCould not delete group '" + gdel + "'. It may not exist or is protected."));
+                                send(sender, plugin.tl("chat.error.group-delete-failed", gdel));
                             }
                         } else if (gaction.equals("removeuser")) {
-                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group removeuser <name> <player>")); break; }
+                            if (args.length < 4) { send(sender, plugin.tl("chat.info.usage", "/fperm group removeuser <name> <player>")); break; }
                             String gname2 = args[2];
                             var target2 = Bukkit.getOfflinePlayer(args[3]);
                             if (target2 == null || target2.getUniqueId() == null) {
-                                send(sender, ColorConverter.colorize("&cCould not resolve player: " + args[3]));
+                                send(sender, plugin.tl("chat.error.player-not-found", args[3]));
                                 break;
                             }
                             service.removeUserFromGroup(target2.getUniqueId(), gname2);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aRemoved " + args[3] + " from group " + gname2));
+                            send(sender, plugin.tl("chat.success.user-removed-group", args[3], gname2));
                         } else if (gaction.equals("setinherit")) {
-                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group setinherit <group> <parent>")); break; }
+                            if (args.length < 4) { send(sender, plugin.tl("chat.info.usage", "/fperm group setinherit <group> <parent>")); break; }
                             boolean success = service.addGroupInheritance(args[2], args[3]);
                             if (success) {
                                 plugin.getPermissionService().saveAsync();
-                                send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' now inherits from '" + args[3] + "'."));
+                                send(sender, plugin.tl("chat.success.inheritance-set", args[2], args[3]));
                             } else {
-                                send(sender, ColorConverter.colorize("&cFailed to set inheritance. Check for circular dependencies."));
+                                send(sender, plugin.tl("chat.error.inheritance-failed"));
                             }
                         } else if (gaction.equals("removeinherit")) {
-                            if (args.length < 4) { send(sender, ColorConverter.colorize("&eUsage: /fperm group removeinherit <group> <parent>")); break; }
+                            if (args.length < 4) { send(sender, plugin.tl("chat.info.usage", "/fperm group removeinherit <group> <parent>")); break; }
                             service.removeGroupInheritance(args[2], args[3]);
                             plugin.getPermissionService().saveAsync();
-                            send(sender, ColorConverter.colorize("&aGroup '" + args[2] + "' no longer inherits from '" + args[3] + "'."));
+                            send(sender, plugin.tl("chat.success.inheritance-removed", args[2], args[3]));
                         } else if (gaction.equals("inheritance")) {
-                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group inheritance <group>")); break; }
+                            if (args.length < 3) { send(sender, plugin.tl("chat.info.usage", "/fperm group inheritance <group>")); break; }
                             var chain = service.getGroupInheritanceChain(args[2]);
-                            send(sender, ColorConverter.colorize("&eInheritance chain for '" + args[2] + "':"));
+                            send(sender, plugin.tl("chat.info.inheritance-header", args[2]));
                             if (chain.isEmpty()) {
-                                send(sender, ColorConverter.colorize(" &7- (no inheritance)"));
+                                send(sender, plugin.tl("chat.info.inheritance-none"));
                             } else {
                                 for (String g : chain) {
-                                    send(sender, ColorConverter.colorize(" &7- " + g));
+                                    send(sender, plugin.tl("chat.info.inheritance-entry", g));
                                 }
                             }
                             // Also show parents directly
                             var gd = service.getGroup(args[2]);
                             if (gd != null && !gd.getParents().isEmpty()) {
-                                send(sender, ColorConverter.colorize("&eDirect parents: " + String.join(", ", gd.getParents())));
+                                send(sender, plugin.tl("chat.info.inheritance-direct", String.join(", ", gd.getParents())));
                             }
                         } else if (gaction.equals("perms")) {
-                            if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm group perms <group>")); break; }
+                            if (args.length < 3) { send(sender, plugin.tl("chat.info.usage", "/fperm group perms <group>")); break; }
                             var gd = service.getGroup(args[2]);
                             if (gd == null) {
-                                send(sender, ColorConverter.colorize("&cGroup not found: " + args[2]));
+                                send(sender, plugin.tl("chat.error.group-not-found", args[2]));
                                 break;
                             }
-                            send(sender, ColorConverter.colorize("&ePermissions for group '" + args[2] + "':"));
+                            send(sender, plugin.tl("chat.info.perms-header", args[2]));
                             // Direct permissions
                             if (gd.getPermissions().isEmpty()) {
-                                send(sender, ColorConverter.colorize(" &7- (no direct permissions)"));
+                                send(sender, plugin.tl("chat.info.perms-direct-none"));
                             } else {
-                                send(sender, ColorConverter.colorize(" &bDirect permissions:"));
+                                send(sender, plugin.tl("chat.info.perms-direct-header"));
                                 for (String p : gd.getPermissions()) {
-                                    send(sender, ColorConverter.colorize(" &7- " + p));
+                                    send(sender, plugin.tl("chat.info.perms-entry", p));
                                 }
                             }
                             // Inherited permissions
                             var inherited = gd.getAllInheritedPermissions(service.getGroups());
-                            inherited.removeAll(gd.getPermissions()); // Only show inherited ones
+                            inherited.removeAll(gd.getPermissions());
                             if (!inherited.isEmpty()) {
-                                send(sender, ColorConverter.colorize(" &bInherited permissions (from parents):"));
+                                send(sender, plugin.tl("chat.info.perms-inherited-header"));
                                 for (String p : inherited) {
-                                    send(sender, ColorConverter.colorize(" &7- " + p));
+                                    send(sender, plugin.tl("chat.info.perms-entry", p));
                                 }
                             }
                         } else {
-                            send(sender, ColorConverter.colorize("&cUnknown group action: " + gaction));
+                            send(sender, plugin.tl("chat.error.unknown-group-action", gaction));
                         }
                     } catch (Exception e) {
                         kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Exception handling /fperm group", e);
-                        send(sender, ColorConverter.colorize("&cInternal error while processing group command."));
+                        send(sender, plugin.tl("chat.error.internal-error-group"));
                     }
                     break;
                 case "check":
-                    if (args.length < 3) { send(sender, ColorConverter.colorize("&eUsage: /fperm check <player> <perm>")); break; }
+                    if (args.length < 3) { send(sender, plugin.tl("chat.info.usage", "/fperm check <player> <perm>")); break; }
                     OfflinePlayer t = Bukkit.getOfflinePlayer(args[1]);
                     boolean ok = service.hasPermission(t.getUniqueId(), args[2]);
-                    send(sender, ColorConverter.colorize(args[1] + (ok ? " &aHAS " : " &cDOES NOT HAVE ") + args[2]));
+                    send(sender, plugin.tl(ok ? "chat.info.check-has" : "chat.info.check-not", args[1], args[2]));
                     break;
                 case "listperms":
-                    if (args.length < 2) { send(sender, ColorConverter.colorize("&eUsage: /fperm listperms <player>")); break; }
+                    if (args.length < 2) { send(sender, plugin.tl("chat.info.usage", "/fperm listperms <player>")); break; }
                     try {
                         OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
                         if (target == null || target.getUniqueId() == null) {
-                            send(sender, ColorConverter.colorize("&cCould not resolve player: " + args[1]));
+                            send(sender, plugin.tl("chat.error.player-not-found", args[1]));
                             break;
                         }
                         var perms = service.getAllowedPermissions(target.getUniqueId());
                         if (perms.isEmpty()) {
-                            send(sender, ColorConverter.colorize("&e" + args[1] + " has no registered permissions (or none gathered)."));
+                            send(sender, plugin.tl("chat.info.listperms-none", args[1]));
                         } else {
-                            send(sender, ColorConverter.colorize("&ePermissions for " + args[1] + ":"));
-                            for (String p : perms) send(sender, ColorConverter.colorize(" - " + p));
+                            send(sender, plugin.tl("chat.info.listperms-header", args[1]));
+                            for (String p : perms) send(sender, plugin.tl("chat.info.listperms-entry", p));
                         }
                     } catch (Exception e) {
                         kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Exception during listperms", e);
-                        send(sender, ColorConverter.colorize("&cInternal error while listing permissions."));
+                        send(sender, plugin.tl("chat.error.internal-error-list"));
                     }
                     break;
                 default:
-                    send(sender, ColorConverter.colorize("&eUnknown subcommand. Use /fperm help"));
+                    send(sender, plugin.tl("chat.error.unknown-subcommand"));
             }
         } catch (Exception ex) {
             kaiakk.foliaPerms.internal.ErrorHandler.handle(plugin, "Unhandled exception while executing /fperm", ex);
-            send(sender, ColorConverter.colorize("&cInternal error while executing command."));
+            send(sender, plugin.tl("chat.error.internal-error"));
         }
 
         return true;

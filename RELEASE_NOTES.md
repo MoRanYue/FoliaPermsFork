@@ -1,6 +1,6 @@
 # Release Notes
 
-## v0.1.1+26.1.2
+## v0.2.0+26.1.2
 
 ### Fixes
 - Fixed an issue where player permissions were not correctly updated after a refresh
